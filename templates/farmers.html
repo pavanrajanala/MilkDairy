@@ -647,13 +647,23 @@
 
                                         <div class="table-actions">
 
-                                            <!-- EDIT -->
-                                            <a
-                                                href="{{ url_for('farmers', edit_id=farmer[0]) }}"
-                                                class="btn-edit"
-                                            >
-                                                Edit
-                                            </a>
+    <!-- VIEW -->
+    <a
+        href="{{ url_for('view_farmer', farmer_id=farmer[0]) }}"
+        class="btn-view"
+    >
+        View
+    </a>
+
+    <!-- EDIT -->
+    <a
+        href="{{ url_for('farmers', edit_id=farmer[0]) }}"
+        class="btn-edit"
+    >
+        Edit
+    </a>
+
+
 
 
                                             <!-- DELETE -->

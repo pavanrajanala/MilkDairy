@@ -1,0 +1,159 @@
+/* =========================================================
+   FARMER VIEW PAGE
+   ========================================================= */
+
+.farmer-view-page {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------
+   COMMON BOX SIZING
+   --------------------------------------------------------- */
+
+.farmer-view-page .profile-box,
+.farmer-view-page .stat-card,
+.farmer-view-page .farmer-section {
+    box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------
+   PROFILE
+   --------------------------------------------------------- */
+
+.farmer-view-page .profile-box {
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* ---------------------------------------------------------
+   STAT CARDS
+   --------------------------------------------------------- */
+
+.farmer-view-page .stat-card {
+    min-height: 115px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* ---------------------------------------------------------
+   ACCOUNT / BORROWING SUMMARY
+   --------------------------------------------------------- */
+
+.farmer-view-page .account-box {
+    min-height: 95px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* ---------------------------------------------------------
+   TABLES
+   --------------------------------------------------------- */
+
+.farmer-view-page .farmer-table th {
+    white-space: nowrap;
+}
+
+.farmer-view-page .farmer-table td {
+    white-space: nowrap;
+}
+
+/* ---------------------------------------------------------
+   BACK BUTTON
+   --------------------------------------------------------- */
+
+.farmer-view-page .back-btn:hover {
+    background: #f8fafc;
+}
+
+/* ---------------------------------------------------------
+   VIEW BUTTON
+   --------------------------------------------------------- */
+
+.farmer-view-page .btn-view {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 58px;
+    height: 34px;
+    padding: 0 12px;
+
+    border: 1px solid #bfdbfe;
+    border-radius: 7px;
+
+    background: #eff6ff;
+    color: #1d4ed8;
+
+    text-decoration: none;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.farmer-view-page .btn-view:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+/* ---------------------------------------------------------
+   BILLING BUTTON
+   --------------------------------------------------------- */
+
+.farmer-view-page .btn-billing {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 70px;
+    height: 34px;
+    padding: 0 12px;
+
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+
+    background: #ffffff;
+    color: #374151;
+
+    text-decoration: none;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.farmer-view-page .btn-billing:hover {
+    background: #f8fafc;
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------- */
+
+@media (max-width: 900px) {
+
+    .farmer-view-page {
+        width: 100%;
+    }
+}
+
+@media (max-width: 680px) {
+
+    .farmer-view-page .profile-box,
+    .farmer-view-page .stat-card,
+    .farmer-view-page .account-box {
+        min-height: auto;
+    }
+
+    .farmer-view-page .farmer-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+    }
+}

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ farmer[2] }} | ABC Dairy</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .farmer-view-page {
+            padding: 28px;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        .farmer-view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 20px;
+        }
+
+        .farmer-view-header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .farmer-view-header p {
+            margin: 6px 0 0;
+            color: #6b7280;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            padding: 10px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            color: #374151;
+            background: white;
+            font-weight: 600;
+        }
+
+        /* PROFILE */
+
+        .farmer-profile {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr 1.5fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .profile-box {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .profile-box span {
+            display: block;
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 7px;
+        }
+
+        .profile-box strong {
+            font-size: 18px;
+        }
+
+        /* STATISTICS */
+
+        .farmer-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .stat-card span {
+            display: block;
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .stat-card strong {
+            font-size: 25px;
+        }
+
+        .stat-card small {
+            display: block;
+            margin-top: 5px;
+            color: #6b7280;
+        }
+
+        /* SECTIONS */
+
+        .farmer-section {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            margin-bottom: 18px;
+        }
+
+        .section-title h2 {
+            margin: 0;
+            font-size: 21px;
+        }
+
+        .section-title p {
+            margin: 5px 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        /* TABLE */
+
+        .farmer-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .farmer-table {
+            width: 100%;
+            min-width: 750px;
+            border-collapse: collapse;
+        }
+
+        .farmer-table th {
+            text-align: left;
+            padding: 13px;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 13px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .farmer-table td {
+            padding: 14px 13px;
+            border-bottom: 1px solid #eef0f3;
+            font-size: 14px;
+        }
+
+        .farmer-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* BORROWING */
+
+        .account-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .account-box {
+            padding: 18px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        .account-box span {
+            display: block;
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .account-box strong {
+            font-size: 22px;
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 1000px) {
+
+            .farmer-profile {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .farmer-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+        }
+
+        @media (max-width: 650px) {
+
+            .farmer-view-page {
+                padding: 18px;
+            }
+
+            .farmer-view-header {
+                display: block;
+            }
+
+            .farmer-view-header h1 {
+                font-size: 25px;
+            }
+
+            .back-btn {
+                display: inline-block;
+                margin-top: 15px;
+            }
+
+            .farmer-profile,
+            .farmer-stats,
+            .account-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .farmer-section {
+                padding: 17px;
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <h2>ABC Dairy</h2>
+            <span>Milk Collection</span>
+        </div>
+
+        <nav class="sidebar-nav">
+
+            <a href="{{ url_for('dashboard') }}">
+                <span>Dashboard</span>
+            </a>
+
+            <a href="{{ url_for('collection') }}">
+                <span>Collection</span>
+            </a>
+
+            <a href="{{ url_for('farmers') }}" class="active">
+                <span>Farmers</span>
+            </a>
+
+            <a href="#">
+                <span>Reports</span>
+            </a>
+
+            <a href="{{ url_for('borrowing') }}">
+                <span>Borrowing</span>
+            </a>
+
+            <a href="{{ url_for('settings') }}">
+                <span>Rate Settings</span>
+            </a>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- MAIN -->
+
+    <main class="main">
+
+        <div class="farmer-view-page">
+
+            <!-- HEADER -->
+
+            <div class="farmer-view-header">
+
+                <div>
+                    <h1>{{ farmer[2] }}</h1>
+
+                    <p>
+                        Farmer account and milk analysis
+                    </p>
+                </div>
+
+                <a
+                    href="{{ url_for('farmers') }}"
+                    class="back-btn"
+                >
+                    ← Back to Farmers
+                </a>
+
+            </div>
+
+
+            <!-- PROFILE -->
+
+            <div class="farmer-profile">
+
+                <div class="profile-box">
+                    <span>CID</span>
+                    <strong>{{ farmer[1] }}</strong>
+                </div>
+
+                <div class="profile-box">
+                    <span>Farmer Name</span>
+                    <strong>{{ farmer[2] }}</strong>
+                </div>
+
+                <div class="profile-box">
+                    <span>Phone</span>
+                    <strong>{{ farmer[3] or "-" }}</strong>
+                </div>
+
+                <div class="profile-box">
+                    <span>Address</span>
+                    <strong>{{ farmer[4] or "-" }}</strong>
+                </div>
+
+            </div>
+
+
+            <!-- MILK STATISTICS -->
+
+            <div class="farmer-stats">
+
+                <div class="stat-card">
+                    <span>Total Milk</span>
+                    <strong>
+                        {{ "%.2f"|format(analysis[1] or 0) }} L
+                    </strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Total Milk Amount</span>
+                    <strong>
+                        ₹{{ "%.2f"|format(analysis[2] or 0) }}
+                    </strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Average Milk / Entry</span>
+                    <strong>
+                        {{ "%.2f"|format(analysis[3] or 0) }} L
+                    </strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Average FAT</span>
+                    <strong>
+                        {{ "%.2f"|format(analysis[4] or 0) }}
+                    </strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Average SNF</span>
+                    <strong>
+                        {{ "%.2f"|format(analysis[5] or 0) }}
+                    </strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Collection Entries</span>
+                    <strong>
+                        {{ analysis[0] or 0 }}
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <!-- BORROWING ACCOUNT -->
+
+            <div class="farmer-section">
+
+                <div class="section-title">
+
+                    <h2>Borrowing Account</h2>
+
+                    <p>
+                        Current borrowing position of this farmer.
+                    </p>
+
+                </div>
+
+                <div class="account-summary">
+
+                    <div class="account-box">
+                        <span>Total Borrowed</span>
+                        <strong>
+                            ₹{{ "%.2f"|format(borrowing_summary[0] or 0) }}
+                        </strong>
+                    </div>
+
+                    <div class="account-box">
+                        <span>Total Deducted</span>
+                        <strong>
+                            ₹{{ "%.2f"|format(borrowing_summary[1] or 0) }}
+                        </strong>
+                    </div>
+
+                    <div class="account-box">
+                        <span>Outstanding</span>
+                        <strong>
+                            ₹{{ "%.2f"|format(borrowing_summary[2] or 0) }}
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- COLLECTION HISTORY -->
+
+            <div class="farmer-section">
+
+                <div class="section-title">
+
+                    <h2>Collection History</h2>
+
+                    <p>
+                        Complete milk collection records.
+                    </p>
+
+                </div>
+
+                {% if collections %}
+
+                <div class="farmer-table-wrapper">
+
+                    <table class="farmer-table">
+
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Session</th>
+                                <th>FAT</th>
+                                <th>SNF</th>
+                                <th>Quantity</th>
+                                <th>Rate</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                        {% for collection in collections %}
+
+                            <tr>
+
+                                <td>
+                                    {{ collection[1] }}
+                                </td>
+
+                                <td>
+                                    {{ collection[2] }}
+                                </td>
+
+                                <td>
+                                    {{ "%.2f"|format(collection[3] or 0) }}
+                                </td>
+
+                                <td>
+                                    {{ "%.2f"|format(collection[4] or 0) }}
+                                </td>
+
+                                <td>
+                                    {{ "%.2f"|format(collection[5] or 0) }} L
+                                </td>
+
+                                <td>
+                                    ₹{{ "%.2f"|format(collection[6] or 0) }}
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        ₹{{ "%.2f"|format(collection[7] or 0) }}
+                                    </strong>
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                {% else %}
+
+                    <p>No collection records found.</p>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- BORROWING HISTORY -->
+
+            <div class="farmer-section">
+
+                <div class="section-title">
+
+                    <h2>Borrowing History</h2>
+
+                    <p>
+                        Borrowing records for this farmer.
+                    </p>
+
+                </div>
+
+                {% if borrowings %}
+
+                <div class="farmer-table-wrapper">
+
+                    <table class="farmer-table">
+
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Borrowed</th>
+                                <th>Deducted</th>
+                                <th>Remaining</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                        {% for borrowing in borrowings %}
+
+                            <tr>
+
+                                <td>
+                                    {{ borrowing[5] }}
+                                </td>
+
+                                <td>
+                                    ₹{{ "%.2f"|format(borrowing[1] or 0) }}
+                                </td>
+
+                                <td>
+                                    ₹{{ "%.2f"|format(borrowing[2] or 0) }}
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        ₹{{ "%.2f"|format(borrowing[3] or 0) }}
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    {{ borrowing[4] or "-" }}
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                {% else %}
+
+                    <p>No borrowing records found.</p>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

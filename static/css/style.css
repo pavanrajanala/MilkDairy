@@ -804,3 +804,33 @@ img { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
+
+/* =========================================
+   FARMER VIEW BUTTON
+========================================= */
+
+.btn-view {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    height: 34px;
+    padding: 0 12px;
+
+    border: 1px solid #bfdbfe;
+    border-radius: 7px;
+
+    background: #eff6ff;
+    color: #1d4ed8;
+
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.btn-view:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
