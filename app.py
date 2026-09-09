@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash
 from datetime import date
 
@@ -13,7 +14,7 @@ from db import (
 
 app = Flask(__name__)
 
-app.secret_key = "abc-dairy-local-key"
+app.secret_key = os.environ.get("SECRET_KEY", "abc-dairy-local-key")
 
 
 # =========================================================
