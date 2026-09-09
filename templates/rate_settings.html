@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Rate Settings - ABC Dairy</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                🥛
+            </div>
+
+            <div>
+                <h2>ABC Dairy</h2>
+                <span>Milk Management</span>
+            </div>
+
+        </div>
+
+
+        <nav>
+
+            <a href="/" class="nav-item">
+                <span>⌂</span>
+                Dashboard
+            </a>
+
+            <a href="/collection" class="nav-item">
+                <span>🥛</span>
+                Milk Collection
+            </a>
+
+            <a href="/farmers" class="nav-item">
+                <span>👨‍🌾</span>
+                Farmers
+            </a>
+
+            <a href="/reports" class="nav-item">
+                <span>📊</span>
+                Reports
+            </a>
+
+            <a href="/borrowing" class="nav-item">
+                <span>💰</span>
+                Borrowing
+            </a>
+
+            <a href="/settings" class="nav-item active">
+                <span>⚙️</span>
+                Rate Settings
+            </a>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- ================= MAIN CONTENT ================= -->
+
+    <main class="main">
+
+        <!-- TOP BAR -->
+
+        <header class="topbar">
+
+            <div>
+
+                <h1>
+                    Rate Settings ⚙️
+                </h1>
+
+                <p>
+                    Configure milk payment calculation.
+                </p>
+
+            </div>
+
+
+            <a href="/" class="back-button">
+                ← Dashboard
+            </a>
+
+        </header>
+
+
+        <!-- ================= RATE PANEL ================= -->
+
+        <section class="panel rate-panel">
+
+            <div class="section-title">
+
+                <h2>
+                    Milk Rate
+                </h2>
+
+                <p>
+                    Set the rate used for farmer payments.
+                </p>
+
+            </div>
+
+
+            <!-- FLASH MESSAGES -->
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+
+                {% for category, message in messages %}
+
+                    <div class="flash {{ category }}">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endwith %}
+
+
+            <!-- ================= FORM ================= -->
+
+            <form method="POST">
+
+
+                <!-- PRICING MODE -->
+
+                <div class="setting-section">
+
+                    <label class="setting-label">
+                        Pricing Method
+                    </label>
+
+
+                    <div class="pricing-options">
+
+
+                        <!-- FAT ONLY -->
+
+                        <label class="pricing-option">
+
+                            <input
+                                type="radio"
+                                name="pricing_mode"
+                                value="FAT_ONLY"
+
+                                {% if not rate or rate[0] == "FAT_ONLY" %}
+                                    checked
+                                {% endif %}
+                            >
+
+                            <div>
+
+                                <strong>
+                                    FAT Only
+                                </strong>
+
+                                <small>
+                                    Payment based only on FAT.
+                                </small>
+
+                            </div>
+
+                        </label>
+
+
+                        <!-- FAT + SNF -->
+
+                        <label class="pricing-option">
+
+                            <input
+                                type="radio"
+                                name="pricing_mode"
+                                value="FAT_SNF"
+
+                                {% if rate and rate[0] == "FAT_SNF" %}
+                                    checked
+                                {% endif %}
+                            >
+
+                            <div>
+
+                                <strong>
+                                    FAT + SNF
+                                </strong>
+
+                                <small>
+                                    Payment based on FAT and SNF.
+                                </small>
+
+                            </div>
+
+                        </label>
+
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================= FAT RATE ================= -->
+
+                <div class="rate-input">
+
+                    <label>
+                        FAT Rate
+                    </label>
+
+
+                    <div class="input-with-prefix">
+
+                        <span>
+                            ₹
+                        </span>
+
+                        <input
+                            type="number"
+                            name="fat_rate"
+                            step="0.01"
+                            min="0.01"
+
+                            value="{% if rate %}{{ rate[1] }}{% else %}8.00{% endif %}"
+
+                            required
+                        >
+
+                    </div>
+
+
+                    <small>
+                        Example: ₹8 × 10 FAT = ₹80/L
+                    </small>
+
+                </div>
+
+
+                <!-- ================= SNF RATE ================= -->
+
+                <div class="rate-input">
+
+                    <label>
+                        SNF Rate
+                    </label>
+
+
+                    <div class="input-with-prefix">
+
+                        <span>
+                            ₹
+                        </span>
+
+                        <input
+                            type="number"
+                            name="snf_rate"
+                            step="0.01"
+                            min="0"
+
+                            value="{% if rate %}{{ rate[2] }}{% else %}0{% endif %}"
+                        >
+
+                    </div>
+
+
+                    <small>
+                        Required only for FAT + SNF mode.
+                    </small>
+
+                </div>
+
+
+                <!-- ================= SAVE BUTTON ================= -->
+
+                <div class="settings-actions">
+
+                    <button
+                        type="submit"
+                        class="save-button">
+
+                        ✓ Save Rate
+
+                    </button>
+
+                </div>
+
+
+            </form>
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+</html>

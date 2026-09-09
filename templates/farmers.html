@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Farmers - ABC Dairy</title>
+
+    <style>
+        /* FARMERS PAGE ONLY — intentionally isolated from Collection */
+        .farmers-page .main {
+            width: calc(100% - 240px);
+            margin-left: 240px;
+            min-height: 100vh;
+            padding: 30px 34px 50px;
+        }
+        .farmers-page .collection-card {
+            padding: 30px;
+        }
+        .farmers-page .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 22px;
+        }
+        .farmers-page .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .farmers-page .form-group label {
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .farmers-page .form-group input,
+        .farmers-page .form-group select,
+        .farmers-page .form-group textarea {
+            width: 100%;
+            height: 56px;
+            min-height: 56px;
+            padding: 0 16px;
+            font-size: 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-strong);
+            outline: none;
+            background: #fff;
+            color: var(--text);
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        .farmers-page .form-group input:focus,
+        .farmers-page .form-group select:focus,
+        .farmers-page .form-group textarea:focus {
+            border-color: #7aa2f8;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .10);
+        }
+        .farmers-page .form-actions {
+            margin-top: 24px;
+        }
+        .farmers-page .form-actions .btn-primary {
+            min-height: 48px;
+            padding: 0 21px;
+            font-size: 14px;
+        }
+        .farmers-page .farmer-search-section {
+            padding: 22px 26px;
+        }
+        .farmers-page .search-input-wrapper input {
+            height: 52px;
+            font-size: 15px;
+        }
+        .farmers-page .search-button {
+            min-height: 52px;
+        }
+        @media (max-width: 900px) {
+            .farmers-page .main {
+                width: calc(100% - 76px);
+                margin-left: 76px;
+                padding-left: 26px;
+                padding-right: 26px;
+            }
+        }
+        @media (max-width: 680px) {
+            .farmers-page .main {
+                width: 100%;
+                margin-left: 0;
+                padding: 20px 14px 82px;
+            }
+            .farmers-page .collection-card { padding: 20px; }
+            .farmers-page .form-grid { grid-template-columns: 1fr; gap: 16px; }
+            .farmers-page .form-group input,
+            .farmers-page .form-group select,
+            .farmers-page .form-group textarea {
+                height: 54px;
+                min-height: 54px;
+            }
+        }
+    </style>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css', v='farmers-final-20260909') }}"
+    >
+</head>
+
+<body>
+
+<div class="app farmers-page">
+
+    <!-- SIDEBAR: same structure and sizing as Dashboard -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">🥛</div>
+
+            <div>
+                <h2>ABC Dairy</h2>
+                <span>Milk Management</span>
+            </div>
+        </div>
+
+        <nav>
+            <a href="{{ url_for('dashboard') }}" class="nav-item">
+                <span>⌂</span>
+                Dashboard
+            </a>
+
+            <a href="{{ url_for('collection') }}" class="nav-item">
+                <span>🥛</span>
+                Milk Collection
+            </a>
+
+            <a href="{{ url_for('farmers') }}" class="nav-item active">
+                <span>👨‍🌾</span>
+                Farmers
+            </a>
+
+            <a href="{{ url_for('reports') }}" class="nav-item">
+                <span>📊</span>
+                Reports
+            </a>
+
+            <a href="{{ url_for('borrowing') }}" class="nav-item">
+                <span>💰</span>
+                Borrowing
+            </a>
+
+            <a href="{{ url_for('settings') }}" class="nav-item">
+                <span>⚙️</span>
+                Rate Settings
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="status-dot">
+                <span></span>
+                System Online
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- MAIN CONTENT: same shell as Dashboard -->
+    <main class="main">
+
+        <!-- ================= HEADER ================= -->
+        <header class="collection-header">
+
+            <div>
+                <h1>Farmers</h1>
+
+                <p>
+                    Manage farmer details and CID records
+                </p>
+            </div>
+
+        </header>
+
+
+        <!-- ================= FLASH MESSAGES ================= -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                <div class="flash-container">
+
+                    {% for category, message in messages %}
+
+                        <div class="flash-message {{ category }}">
+                            {{ message }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <!-- ================= ADD / EDIT FARMER ================= -->
+        <section class="collection-card">
+
+            {% if edit_farmer %}
+
+                <!-- EDIT FARMER -->
+
+                <div class="collection-card-header">
+
+                    <div>
+                        <h2>Edit Farmer</h2>
+
+                        <p>
+                            Update farmer information
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <form
+                    method="POST"
+                    action="{{ url_for('edit_farmer', farmer_id=edit_farmer[0]) }}"
+                    class="collection-form"
+                >
+
+                    <div class="form-grid">
+
+                        <!-- CID -->
+                        <div class="form-group">
+
+                            <label for="edit-cid">
+                                CID
+                            </label>
+
+                            <input
+                                type="text"
+                                id="edit-cid"
+                                name="cid"
+                                value="{{ edit_farmer[1] }}"
+                                placeholder="Enter CID"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- NAME -->
+                        <div class="form-group">
+
+                            <label for="edit-name">
+                                Farmer Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="edit-name"
+                                name="name"
+                                value="{{ edit_farmer[2] }}"
+                                placeholder="Enter farmer name"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- PHONE -->
+                        <div class="form-group">
+
+                            <label for="edit-phone">
+                                Phone
+                            </label>
+
+                            <input
+                                type="text"
+                                id="edit-phone"
+                                name="phone"
+                                value="{{ edit_farmer[3] or '' }}"
+                                placeholder="Enter phone number"
+                            >
+
+                        </div>
+
+
+                        <!-- ADDRESS -->
+                        <div class="form-group">
+
+                            <label for="edit-address">
+                                Address
+                            </label>
+
+                            <input
+                                type="text"
+                                id="edit-address"
+                                name="address"
+                                value="{{ edit_farmer[4] or '' }}"
+                                placeholder="Enter address"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- BUTTONS -->
+                    <div class="form-actions">
+
+                        <button
+                            type="submit"
+                            class="btn-primary"
+                        >
+                            Update Farmer
+                        </button>
+
+
+                        <a
+                            href="{{ url_for('farmers') }}"
+                            class="btn-secondary"
+                        >
+                            Cancel
+                        </a>
+
+                    </div>
+
+                </form>
+
+
+            {% else %}
+
+                <!-- ADD FARMER -->
+
+                <div class="collection-card-header">
+
+                    <div>
+                        <h2>Add Farmer</h2>
+
+                        <p>
+                            Register a new farmer
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <form
+                    method="POST"
+                    action="{{ url_for('farmers') }}"
+                    class="collection-form"
+                >
+
+                    <div class="form-grid">
+
+                        <!-- CID -->
+                        <div class="form-group">
+
+                            <label for="cid">
+                                CID
+                            </label>
+
+                            <input
+                                type="text"
+                                id="cid"
+                                name="cid"
+                                placeholder="Enter CID"
+                                autocomplete="off"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- NAME -->
+                        <div class="form-group">
+
+                            <label for="name">
+                                Farmer Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                placeholder="Enter farmer name"
+                                autocomplete="off"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- PHONE -->
+                        <div class="form-group">
+
+                            <label for="phone">
+                                Phone
+                            </label>
+
+                            <input
+                                type="text"
+                                id="phone"
+                                name="phone"
+                                placeholder="Enter phone number"
+                                autocomplete="off"
+                            >
+
+                        </div>
+
+
+                        <!-- ADDRESS -->
+                        <div class="form-group">
+
+                            <label for="address">
+                                Address
+                            </label>
+
+                            <input
+                                type="text"
+                                id="address"
+                                name="address"
+                                placeholder="Enter address"
+                                autocomplete="off"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- BUTTON -->
+                    <div class="form-actions">
+
+                        <button
+                            type="submit"
+                            class="btn-primary"
+                        >
+                            + Add Farmer
+                        </button>
+
+                    </div>
+
+                </form>
+
+            {% endif %}
+
+        </section>
+
+
+
+        <!-- ================= SEARCH ================= -->
+        <section class="farmer-search-section">
+
+            <form
+                method="GET"
+                action="{{ url_for('farmers') }}"
+                class="search-form"
+                id="farmerSearchForm"
+            >
+
+                <div class="search-input-wrapper">
+
+                    <span class="search-icon">
+                        🔍
+                    </span>
+
+
+                    <input
+                        type="text"
+                        id="farmerSearch"
+                        name="search"
+                        value="{{ search }}"
+                        placeholder="Search CID, farmer name or phone..."
+                        autocomplete="off"
+                    >
+
+
+                    {% if search %}
+
+                        <button
+                            type="button"
+                            class="search-clear"
+                            onclick="clearFarmerSearch()"
+                            title="Clear search"
+                        >
+                            ×
+                        </button>
+
+                    {% endif %}
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="btn-primary search-button"
+                >
+                    Search
+                </button>
+
+
+                {% if search %}
+
+                    <a
+                        href="{{ url_for('farmers') }}"
+                        class="btn-secondary"
+                    >
+                        Clear
+                    </a>
+
+                {% endif %}
+
+            </form>
+
+        </section>
+
+
+
+        <!-- ================= FARMER LIST ================= -->
+        <section class="collection-card farmer-list-card">
+
+            <div class="collection-card-header farmer-list-header">
+
+                <div>
+
+                    <h2>Farmer List</h2>
+
+                    <p>
+                        {% if search %}
+                            Search results for "{{ search }}"
+                        {% else %}
+                            All registered farmers
+                        {% endif %}
+                    </p>
+
+                </div>
+
+
+                <div class="farmer-count">
+
+                    {{ farmers|length }}
+
+                    <span>
+                        {% if farmers|length == 1 %}
+                            Farmer
+                        {% else %}
+                            Farmers
+                        {% endif %}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================= TABLE ================= -->
+            <div class="table-wrapper">
+
+                <table class="collection-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>CID</th>
+
+                            <th>Name</th>
+
+                            <th>Phone</th>
+
+                            <th>Address</th>
+
+                            <th>Actions</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% if farmers %}
+
+                            {% for farmer in farmers %}
+
+                                <tr>
+
+                                    <!-- CID -->
+                                    <td>
+
+                                        <strong class="farmer-cid">
+                                            {{ farmer[1] }}
+                                        </strong>
+
+                                    </td>
+
+
+                                    <!-- NAME -->
+                                    <td>
+
+                                        <span class="farmer-name">
+                                            {{ farmer[2] }}
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- PHONE -->
+                                    <td>
+
+                                        {% if farmer[3] %}
+
+                                            <span class="farmer-phone">
+                                                {{ farmer[3] }}
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="not-available">
+                                                -
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <!-- ADDRESS -->
+                                    <td>
+
+                                        {% if farmer[4] %}
+
+                                            <span class="farmer-address">
+                                                {{ farmer[4] }}
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="not-available">
+                                                -
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <!-- ACTIONS -->
+                                    <td>
+
+                                        <div class="table-actions">
+
+                                            <!-- EDIT -->
+                                            <a
+                                                href="{{ url_for('farmers', edit_id=farmer[0]) }}"
+                                                class="btn-edit"
+                                            >
+                                                Edit
+                                            </a>
+
+
+                                            <!-- DELETE -->
+                                            <form
+                                                method="POST"
+                                                action="{{ url_for('delete_farmer', farmer_id=farmer[0]) }}"
+                                                class="delete-form"
+                                                onsubmit="return confirmDelete('{{ farmer[2] }}');"
+                                            >
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn-delete"
+                                                >
+                                                    Delete
+                                                </button>
+
+                                            </form>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+
+                        {% else %}
+
+                            <!-- EMPTY -->
+                            <tr>
+
+                                <td
+                                    colspan="5"
+                                    class="empty-state"
+                                >
+
+                                    <div class="empty-icon">
+                                        👨‍🌾
+                                    </div>
+
+                                    {% if search %}
+
+                                        <strong>
+                                            No farmers found
+                                        </strong>
+
+                                        <span>
+                                            Try another CID, name or phone number.
+                                        </span>
+
+                                        <a
+                                            href="{{ url_for('farmers') }}"
+                                            class="btn-secondary empty-clear-button"
+                                        >
+                                            Clear Search
+                                        </a>
+
+                                    {% else %}
+
+                                        <strong>
+                                            No farmers registered
+                                        </strong>
+
+                                        <span>
+                                            Add your first farmer using the form above.
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+                            </tr>
+
+                        {% endif %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+
+<!-- ================= JAVASCRIPT ================= -->
+<script>
+
+function clearFarmerSearch() {
+
+    const searchInput =
+        document.getElementById("farmerSearch");
+
+    if (searchInput) {
+
+        searchInput.value = "";
+
+    }
+
+    const searchForm =
+        document.getElementById("farmerSearchForm");
+
+    if (searchForm) {
+
+        searchForm.submit();
+
+    }
+
+}
+
+
+function confirmDelete(farmerName) {
+
+    return confirm(
+        "Are you sure you want to delete farmer '" +
+        farmerName +
+        "'?\n\n" +
+        "This action cannot be undone."
+    );
+
+}
+
+
+/* Enter key search */
+const farmerSearch =
+    document.getElementById("farmerSearch");
+
+if (farmerSearch) {
+
+    farmerSearch.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (event.key === "Enter") {
+
+                event.preventDefault();
+
+                document
+                    .getElementById("farmerSearchForm")
+                    .submit();
+
+            }
+
+        }
+    );
+
+}
+
+</script>
+
+</body>
+</html>

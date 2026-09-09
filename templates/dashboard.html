@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABC Dairy</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">🥛</div>
+
+            <div>
+                <h2>ABC Dairy</h2>
+                <span>Milk Management</span>
+            </div>
+        </div>
+
+        <nav>
+
+            <a href="/" class="nav-item active">
+                <span>⌂</span>
+                Dashboard
+            </a>
+
+            <a href="/collection" class="nav-item">
+                <span>🥛</span>
+                Milk Collection
+            </a>
+
+            <a href="/farmers" class="nav-item">
+                <span>👨‍🌾</span>
+                Farmers
+            </a>
+
+            <a href="/reports" class="nav-item">
+                <span>📊</span>
+                Reports
+            </a>
+
+            <a href="/borrowing" class="nav-item">
+                <span>💰</span>
+                Borrowing
+            </a>
+
+            <a href="/settings" class="nav-item">
+                <span>⚙️</span>
+                Rate Settings
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="status-dot">
+                <span></span>
+                System Online
+            </div>
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <header class="topbar">
+
+            <div>
+                <h1>Welcome 👋</h1>
+                <p>Here's your dairy collection overview.</p>
+            </div>
+
+            <div class="date-box">
+                📅 <span id="today"></span>
+            </div>
+
+        </header>
+
+
+        <!-- COLLECTION BANNER -->
+        <section class="collection-banner">
+
+            <div>
+                <span class="small-label">MILK COLLECTION</span>
+
+                <h2>Ready for today's collection?</h2>
+
+                <p>
+                    Start entering farmer milk details quickly.
+                </p>
+            </div>
+
+            <a href="/collection" class="collection-button">
+                Start Collection →
+            </a>
+
+        </section>
+
+
+        <!-- STAT CARDS -->
+        <section class="stats">
+
+            <div class="stat-card">
+
+                <div class="stat-icon milk-icon">
+                    🥛
+                </div>
+
+                <div>
+                    <span>Today's Milk</span>
+                    <h2>{{ "%.2f"|format(today_milk or 0) }} L</h2>
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon money-icon">
+                    ₹
+                </div>
+
+                <div>
+                    <span>Today's Amount</span>
+                    <h2>₹{{ "%.2f"|format(today_amount or 0) }}</h2>
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon farmer-icon">
+                    👨‍🌾
+                </div>
+
+                <div>
+                    <span>Active Farmers</span>
+                    <h2>{{ active_farmers }}</h2>
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon collection-icon">
+                    📋
+                </div>
+
+                <div>
+                    <span>Today's Entries</span>
+                    <h2>{{ today_entries }}</h2>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- CONTENT -->
+        <section class="content-grid">
+
+            <!-- TODAY'S COLLECTION -->
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+                        <h2>Today's Collection</h2>
+                        <p>Latest milk entries</p>
+                    </div>
+
+                    <a href="/collection">
+                        View all →
+                    </a>
+
+                </div>
+
+
+                {% if today_collections %}
+                    <div class="dashboard-collection-table-wrap">
+                        <table class="dashboard-collection-table">
+                            <thead>
+                                <tr>
+                                    <th>CID</th><th>Farmer</th><th>Session</th><th>FAT</th><th>SNF</th><th>Qty</th><th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in today_collections %}
+                                <tr>
+                                    <td>{{ row[0] }}</td>
+                                    <td>{{ row[1] }}</td>
+                                    <td>{{ row[2] }}</td>
+                                    <td>{{ row[3] }}</td>
+                                    <td>{{ row[4] if row[4] is not none else '-' }}</td>
+                                    <td>{{ row[5] }}</td>
+                                    <td>₹{{ "%.2f"|format(row[7] or 0) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">🥛</div>
+                        <h3>No collection yet</h3>
+                        <p>Start today's collection to see entries here.</p>
+                    </div>
+                {% endif %}
+
+            </div>
+
+
+            <!-- QUICK ACTIONS -->
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+                        <h2>Quick Actions</h2>
+                        <p>Common tasks</p>
+                    </div>
+
+                </div>
+
+
+                <div class="quick-actions">
+
+                    <a href="/collection">
+
+                        <span>🥛</span>
+
+                        <div>
+                            <strong>Milk Collection</strong>
+                            <small>Enter today's milk</small>
+                        </div>
+
+                    </a>
+
+
+                    <a href="/farmers">
+
+                        <span>👨‍🌾</span>
+
+                        <div>
+                            <strong>Farmers</strong>
+                            <small>Manage farmers</small>
+                        </div>
+
+                    </a>
+
+
+                    <a href="/reports">
+
+                        <span>📊</span>
+
+                        <div>
+                            <strong>View Reports</strong>
+                            <small>Check collection reports</small>
+                        </div>
+
+                    </a>
+
+
+                    <a href="/borrowing">
+
+                        <span>💰</span>
+
+                        <div>
+                            <strong>Borrowing</strong>
+                            <small>Manage farmer borrowing</small>
+                        </div>
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script>
+
+const today = new Date();
+
+const options = {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+};
+
+document.getElementById("today").textContent =
+    today.toLocaleDateString("en-IN", options);
+
+</script>
+
+</body>
+</html>
