@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>ABC Dairy Receipt</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/reports_receipt.css') }}">
+
+    <style>
+
+        @media print {
+
+            @page {
+                size: 80mm auto;
+                margin: 0;
+            }
+
+            html,
+            body {
+                width: 80mm !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* Hide everything in the document by default. */
+            body * {
+                visibility: hidden !important;
+            }
+
+            /* Re-reveal only the receipt and its descendants.
+               visibility (not display) is used deliberately so that
+               table/thead/tbody/tr/td keep their tabular layout roles —
+               display:none + display:block here would collapse the
+               table into block boxes and break column alignment. */
+            .receipt,
+            .receipt * {
+                visibility: visible !important;
+            }
+
+            .receipt {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+
+                width: 80mm !important;
+
+                margin: 0 !important;
+                padding: 4mm !important;
+
+                box-sizing: border-box !important;
+
+                background: white !important;
+
+                box-shadow: none !important;
+                border: none !important;
+            }
+
+            /* Belt-and-braces: some browsers still paint scrollbars /
+               body backgrounds outside the absolutely-positioned
+               .receipt if body retains natural document height. */
+            body {
+                overflow: hidden !important;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="receipt">
+
+    <div class="receipt-header">
+
+        <div class="dairy-name">
+            ABC DAIRY
+        </div>
+
+        <div class="receipt-title">
+            MILK COLLECTION
+        </div>
+
+    </div>
+
+    <div class="separator"></div>
+
+    <div class="farmer-info">
+
+        <div>
+            <span>CID</span>
+            <strong>{{ cid }}</strong>
+        </div>
+
+        <div>
+            <span>NAME</span>
+            <strong>{{ entries[0][1] }}</strong>
+        </div>
+
+        <div>
+            <span>PERIOD</span>
+            <strong>{{ date_from }} - {{ date_to }}</strong>
+        </div>
+
+    </div>
+
+    <div class="separator"></div>
+
+    <table class="collection-table">
+
+        <thead>
+            <tr>
+                <th>DATE</th>
+                <th>SES</th>
+                <th>FAT</th>
+                <th>SNF</th>
+                <th>QTY</th>
+                <th>AMT</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+        {% for row in entries %}
+
+            <tr>
+
+                <td>
+                    {{ row[2].strftime('%d-%m') }}
+                </td>
+
+                <td>
+                    {{ row[3] }}
+                </td>
+
+                <td>
+                    {{ "%.2f"|format(row[4]) }}
+                </td>
+
+                <td>
+                    {% if row[5] is none %}
+                        NE
+                    {% else %}
+                        {{ "%.2f"|format(row[5]) }}
+                    {% endif %}
+                </td>
+
+                <td>
+                    {{ "%.2f"|format(row[6]) }}
+                </td>
+
+                <td>
+                    {{ "%.2f"|format(row[8]) }}
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    <div class="separator"></div>
+
+    <div class="summary">
+
+        <div>
+            <span>TOTAL QTY</span>
+            <strong>
+                {{ "%.2f"|format(entries | sum(attribute=6)) }} L
+            </strong>
+        </div>
+
+        <div>
+            <span>MILK AMOUNT</span>
+            <strong>
+                ₹{{ "%.2f"|format(entries | sum(attribute=8)) }}
+            </strong>
+        </div>
+
+    </div>
+
+    <div class="separator"></div>
+
+    <div class="thank-you">
+        THANK YOU
+    </div>
+
+</div>
+
+<script>
+
+window.onload = function () {
+    window.print();
+};
+
+</script>
+
+</body>
+
+</html>

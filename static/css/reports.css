@@ -1,25 +1,293 @@
-.reports-page-content{width:100%;}
-.report-filter-card{margin-bottom:16px;}
-.report-filter-form{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;align-items:end;}
-.report-filter-actions{display:flex;gap:8px;align-items:center;}
-.report-filter-actions>*{white-space:nowrap;}
-.report-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px;}
-.report-stat-card{min-height:100px;padding:17px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);display:flex;flex-direction:column;justify-content:center;}
-.report-stat-card span{color:var(--muted);font-size:11px;font-weight:700;margin-bottom:5px;}
-.report-stat-card strong{color:var(--text);font-size:20px;font-weight:800;}
-.report-table{width:100%;border-collapse:collapse;min-width:850px;}
-.report-table th{padding:12px 14px;background:#f8fafc;border-bottom:1px solid var(--border);color:#667085;font-size:10px;font-weight:800;text-align:left;white-space:nowrap;}
-.report-table td{padding:13px 14px;border-bottom:1px solid #edf0f4;color:var(--text-2);font-size:12px;white-space:nowrap;}
-.report-table tbody tr:last-child td{border-bottom:0;}
-.report-table tbody tr:hover{background:#fafcff;}
-.report-cid{color:var(--primary)!important;font-weight:800;}
-.report-empty{text-align:center!important;color:var(--muted)!important;padding:28px!important;}
-.detail-table{min-width:1000px;}
-@media(max-width:1180px){.report-filter-form{grid-template-columns:1fr 1fr;}.report-filter-actions{grid-column:1/-1;justify-content:flex-start;}.report-stats{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media(max-width:680px){.report-filter-form{grid-template-columns:1fr;}.report-filter-actions{grid-column:auto;flex-direction:column;align-items:stretch;}.report-filter-actions>*{width:100%;}.report-stats{grid-template-columns:1fr;}.report-stat-card{min-height:86px;}.reports-page-content .collection-card{padding:18px;}}
+/* =========================================================
+   ABC DAIRY — REPORTS
+========================================================= */
+
+.reports-page-content {
+    width: 100%;
+}
 
 
-.report-filter-card .report-filter-form{grid-template-columns:repeat(6,minmax(0,1fr));}
-.report-filter-card .report-filter-actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:9px;margin-top:2px;}
-@media(max-width:1180px){.report-filter-card .report-filter-form{grid-template-columns:repeat(3,minmax(0,1fr));}}
-@media(max-width:680px){.report-filter-card .report-filter-form{grid-template-columns:1fr;}.report-filter-card .report-filter-actions{grid-column:auto;flex-direction:column;}.report-filter-card .report-filter-actions a,.report-filter-card .report-filter-actions button{width:100%;}}
+/* =========================================================
+   FILTER CARD
+========================================================= */
+
+.report-filter-card {
+    margin-bottom: 16px;
+}
+
+.report-filter-form {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+
+.report-filter-actions {
+    grid-column: 1 / -1;
+
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+    gap: 9px;
+
+    margin-top: 2px;
+}
+
+.report-filter-actions > * {
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   PRINT RECEIPTS BUTTON
+========================================================= */
+
+.btn-print-receipts {
+    min-height: 44px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 0 16px;
+
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: var(--text-2);
+
+    font-size: 12px;
+    font-weight: 750;
+
+    cursor: pointer;
+
+    transition:
+        background-color .14s ease,
+        border-color .14s ease,
+        color .14s ease;
+}
+
+.btn-print-receipts:hover {
+    background: #f8fafc;
+    border-color: #bfc7d4;
+    color: var(--text);
+}
+
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+.report-stats {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 12px;
+
+    margin-bottom: 16px;
+}
+
+.report-stat-card {
+    min-height: 100px;
+
+    padding: 17px;
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    background: var(--surface);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.report-stat-card span {
+    color: var(--muted);
+
+    font-size: 11px;
+    font-weight: 700;
+
+    margin-bottom: 5px;
+}
+
+.report-stat-card strong {
+    color: var(--text);
+
+    font-size: 20px;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   REPORT TABLE
+========================================================= */
+
+.report-table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    min-width: 850px;
+}
+
+.report-table th {
+    padding: 12px 14px;
+
+    background: #f8fafc;
+
+    border-bottom: 1px solid var(--border);
+
+    color: #667085;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    text-align: left;
+
+    white-space: nowrap;
+}
+
+.report-table td {
+    padding: 13px 14px;
+
+    border-bottom: 1px solid #edf0f4;
+
+    color: var(--text-2);
+
+    font-size: 12px;
+
+    white-space: nowrap;
+}
+
+.report-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.report-table tbody tr:hover {
+    background: #fafcff;
+}
+
+
+/* =========================================================
+   CID
+========================================================= */
+
+.report-cid {
+    color: var(--primary) !important;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.report-empty {
+    text-align: center !important;
+
+    color: var(--muted) !important;
+
+    padding: 28px !important;
+}
+
+
+/* =========================================================
+   DETAIL TABLE
+========================================================= */
+
+.detail-table {
+    min-width: 1000px;
+}
+
+
+/* =========================================================
+   SESSION
+========================================================= */
+
+.session-pill {
+    display: inline-flex;
+
+    min-width: 42px;
+
+    justify-content: center;
+
+    padding: 4px 8px;
+
+    border-radius: 999px;
+
+    background: #eff6ff;
+
+    color: var(--primary);
+
+    font-size: 10px;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1180px) {
+
+    .report-filter-form {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+    }
+
+    .report-filter-actions {
+        grid-column: 1 / -1;
+
+        justify-content: flex-start;
+    }
+
+    .report-stats {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 680px) {
+
+    .report-filter-form {
+        grid-template-columns: 1fr;
+    }
+
+    .report-filter-actions {
+        grid-column: auto;
+
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+    .report-filter-actions > * {
+        width: 100%;
+    }
+
+    .report-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .report-stat-card {
+        min-height: 86px;
+    }
+
+    .reports-page-content .collection-card {
+        padding: 18px;
+    }
+
+}

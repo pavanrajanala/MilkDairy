@@ -1,0 +1,112 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+}
+
+body {
+    font-family: "Courier New", monospace;
+    color: #000;
+}
+
+.receipt {
+    width: 72mm;
+    margin: 0 auto;
+    padding: 3mm 2mm;
+    font-size: 11px;
+}
+
+.receipt-header {
+    text-align: center;
+}
+
+.dairy-name {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.receipt-title {
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 2px;
+}
+
+.separator {
+    border-top: 1px dashed #000;
+    margin: 7px 0;
+}
+
+.farmer-info div {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+    margin: 3px 0;
+}
+
+.farmer-info span {
+    font-weight: normal;
+}
+
+.farmer-info strong {
+    text-align: right;
+}
+
+.collection-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.collection-table th,
+.collection-table td {
+    padding: 2px 0;
+    text-align: center;
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+.collection-table th {
+    font-weight: bold;
+}
+
+.summary div {
+    display: flex;
+    justify-content: space-between;
+    margin: 4px 0;
+}
+
+.summary strong {
+    font-weight: bold;
+}
+
+.thank-you {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+@page {
+    size: 80mm auto;
+    margin: 0;
+}
+
+@media print {
+
+    html,
+    body {
+        width: 80mm;
+        margin: 0;
+        padding: 0;
+    }
+
+    .receipt {
+        width: 72mm;
+        margin: 0 auto;
+        padding: 3mm 2mm;
+    }
+}

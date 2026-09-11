@@ -89,6 +89,7 @@ def get_billing_cycle(selected_date):
 def parse_date(value):
 
     try:
+
         return date.fromisoformat(value)
 
     except (ValueError, TypeError):
@@ -96,37 +97,63 @@ def parse_date(value):
         return date.today()
 
 
+# =========================================================
+# AUTOMATIC 3-MONTH CLEANUP
+# =========================================================
+
 def cleanup_old_collection_data():
-    """Automatically remove collection records older than 6 months."""
+    """
+    Automatically remove collection records
+    older than 3 months.
+    """
+
     connection = None
     cursor = None
+
     try:
+
         connection = get_db_connection()
         cursor = connection.cursor()
+
         cursor.execute("""
             DELETE FROM collection_entries
-            WHERE collection_date < (CURRENT_DATE - INTERVAL '6 months')
+            WHERE collection_date < (
+                CURRENT_DATE - INTERVAL '3 months'
+            )
         """)
+
         connection.commit()
+
     except Exception:
+
         if connection:
             connection.rollback()
+
     finally:
+
         if cursor:
             cursor.close()
+
         if connection:
             release_db_connection(connection)
 
 
 @app.before_request
 def auto_cleanup_old_collection_data():
-    # Run at most once per application process per calendar day so the
-    # cleanup does not slow down normal page navigation.
+
+    # Run cleanup only once per application process
+    # per calendar day so normal page navigation
+    # is not unnecessarily slowed down.
+
     global _last_cleanup_date
+
     today = date.today()
+
     if _last_cleanup_date == today:
         return
+
     cleanup_old_collection_data()
+
     _last_cleanup_date = today
 
 
@@ -424,10 +451,14 @@ def collection():
                     quantity_value
                 )
 
+                # SNF is optional.
+                # When not enabled/not entered,
+                # store it as 0.
+
                 snf = (
                     float(snf_value)
                     if snf_value
-                    else None
+                    else 0
                 )
 
             except ValueError:
@@ -479,7 +510,7 @@ def collection():
                     )
                 )
 
-            if snf is not None and snf < 0:
+            if snf < 0:
 
                 flash(
                     "SNF cannot be negative.",
@@ -554,7 +585,7 @@ def collection():
 
             if (
                 pricing_mode == "FAT_SNF"
-                and snf is not None
+                and snf_value
             ):
 
                 milk_rate = (
@@ -564,6 +595,8 @@ def collection():
                 )
 
             else:
+
+                # FAT ONLY
 
                 milk_rate = (
                     fat * fat_rate
@@ -595,6 +628,12 @@ def collection():
 
             # ---------------------------------------------
             # INSERT / UPDATE
+            #
+            # SAME CID + SAME DATE + SAME SESSION
+            # = UPDATE EXISTING RECORD
+            #
+            # DIFFERENT DATE OR SESSION
+            # = NEW RECORD
             # ---------------------------------------------
 
             cursor.execute("""
@@ -1325,71 +1364,222 @@ def reports():
     connection = get_db_connection()
 
     try:
+
         cursor = connection.cursor()
 
         today = date.today()
+
         default_from = today.replace(day=1)
 
-        from_date = parse_date(request.args.get("from_date") or default_from.isoformat())
-        to_date = parse_date(request.args.get("to_date") or today.isoformat())
-        cid = request.args.get("cid", "").strip()
-        cid_from = request.args.get("cid_from", "").strip()
-        cid_to = request.args.get("cid_to", "").strip()
-        session = request.args.get("session", "").strip().upper()
+        from_date = parse_date(
+            request.args.get(
+                "from_date"
+            ) or default_from.isoformat()
+        )
+
+        to_date = parse_date(
+            request.args.get(
+                "to_date"
+            ) or today.isoformat()
+        )
+
+        cid = request.args.get(
+            "cid",
+            ""
+        ).strip()
+
+        cid_from = request.args.get(
+            "cid_from",
+            ""
+        ).strip()
+
+        cid_to = request.args.get(
+            "cid_to",
+            ""
+        ).strip()
+
+        session = request.args.get(
+            "session",
+            ""
+        ).strip().upper()
 
         if from_date > to_date:
-            from_date, to_date = to_date, from_date
+
+            from_date, to_date = (
+                to_date,
+                from_date
+            )
 
         conditions = [
             "ce.collection_date BETWEEN %s AND %s"
         ]
-        params = [from_date, to_date]
+
+        params = [
+            from_date,
+            to_date
+        ]
+
+        # -------------------------------------------------
+        # EXACT CID
+        # -------------------------------------------------
 
         if cid:
-            conditions.append("f.cid = %s")
+
+            conditions.append(
+                "f.cid = %s"
+            )
+
             params.append(cid)
+
+        # -------------------------------------------------
+        # CID RANGE
+        # -------------------------------------------------
+
         else:
+
             try:
-                cid_from_value = int(cid_from) if cid_from else None
-                cid_to_value = int(cid_to) if cid_to else None
+
+                cid_from_value = (
+                    int(cid_from)
+                    if cid_from
+                    else None
+                )
+
+                cid_to_value = (
+                    int(cid_to)
+                    if cid_to
+                    else None
+                )
+
             except ValueError:
+
                 cid_from_value = None
                 cid_to_value = None
+
                 cid_from = ""
                 cid_to = ""
-                flash("CID range must contain numbers only.", "error")
+
+                flash(
+                    "CID range must contain numbers only.",
+                    "error"
+                )
 
             if cid_from_value is not None:
-                conditions.append("CAST(NULLIF(regexp_replace(f.cid, '[^0-9]', '', 'g'), '') AS BIGINT) >= %s")
-                params.append(cid_from_value)
+
+                conditions.append("""
+                    CAST(
+                        NULLIF(
+                            regexp_replace(
+                                f.cid,
+                                '[^0-9]',
+                                '',
+                                'g'
+                            )
+                            ,
+                            ''
+                        ) AS BIGINT
+                    ) >= %s
+                """)
+
+                params.append(
+                    cid_from_value
+                )
+
             if cid_to_value is not None:
-                conditions.append("CAST(NULLIF(regexp_replace(f.cid, '[^0-9]', '', 'g'), '') AS BIGINT) <= %s")
-                params.append(cid_to_value)
+
+                conditions.append("""
+                    CAST(
+                        NULLIF(
+                            regexp_replace(
+                                f.cid,
+                                '[^0-9]',
+                                '',
+                                'g'
+                            )
+                            ,
+                            ''
+                        ) AS BIGINT
+                    ) <= %s
+                """)
+
+                params.append(
+                    cid_to_value
+                )
+
+        # -------------------------------------------------
+        # SESSION
+        # -------------------------------------------------
 
         if session in ("AM", "PM"):
-            conditions.append("ce.session = %s")
-            params.append(session)
+
+            conditions.append(
+                "ce.session = %s"
+            )
+
+            params.append(
+                session
+            )
+
         else:
+
             session = ""
 
-        where_sql = " AND ".join(conditions)
+        where_sql = (
+            " AND ".join(
+                conditions
+            )
+        )
+
+        # -------------------------------------------------
+        # OVERALL SUMMARY
+        # -------------------------------------------------
 
         cursor.execute(f"""
             SELECT
                 COUNT(*) AS total_entries,
-                COALESCE(SUM(ce.quantity), 0) AS total_quantity,
-                COALESCE(SUM(ce.amount), 0) AS total_amount,
-                COALESCE(AVG(ce.quantity), 0) AS avg_quantity,
-                COALESCE(AVG(ce.fat), 0) AS avg_fat,
-                COALESCE(AVG(ce.snf), 0) AS avg_snf,
-                COALESCE(AVG(ce.rate), 0) AS avg_rate
+
+                COALESCE(
+                    SUM(ce.quantity),
+                    0
+                ) AS total_quantity,
+
+                COALESCE(
+                    SUM(ce.amount),
+                    0
+                ) AS total_amount,
+
+                COALESCE(
+                    AVG(ce.quantity),
+                    0
+                ) AS avg_quantity,
+
+                COALESCE(
+                    AVG(ce.fat),
+                    0
+                ) AS avg_fat,
+
+                COALESCE(
+                    AVG(ce.snf),
+                    0
+                ) AS avg_snf,
+
+                COALESCE(
+                    AVG(ce.rate),
+                    0
+                ) AS avg_rate
+
             FROM collection_entries ce
-            JOIN farmers f ON f.id = ce.farmer_id
+
+            JOIN farmers f
+                ON f.id = ce.farmer_id
+
             WHERE {where_sql}
         """, tuple(params))
+
         summary_row = cursor.fetchone()
 
         class Summary:
+
             total_entries = summary_row[0]
             total_quantity = summary_row[1]
             total_amount = summary_row[2]
@@ -1398,52 +1588,159 @@ def reports():
             avg_snf = summary_row[5]
             avg_rate = summary_row[6]
 
+        # -------------------------------------------------
+        # DAY-WISE SUMMARY
+        # -------------------------------------------------
+
         cursor.execute(f"""
             SELECT
                 ce.collection_date,
                 COUNT(*),
-                COALESCE(SUM(ce.quantity), 0),
-                COALESCE(AVG(ce.fat), 0),
-                COALESCE(AVG(ce.snf), 0),
-                COALESCE(AVG(ce.rate), 0),
-                COALESCE(SUM(ce.amount), 0)
+                COALESCE(
+                    SUM(ce.quantity),
+                    0
+                ),
+                COALESCE(
+                    AVG(ce.fat),
+                    0
+                ),
+                COALESCE(
+                    AVG(ce.snf),
+                    0
+                ),
+                COALESCE(
+                    AVG(ce.rate),
+                    0
+                ),
+                COALESCE(
+                    SUM(ce.amount),
+                    0
+                )
+
             FROM collection_entries ce
-            JOIN farmers f ON f.id = ce.farmer_id
+
+            JOIN farmers f
+                ON f.id = ce.farmer_id
+
             WHERE {where_sql}
-            GROUP BY ce.collection_date
-            ORDER BY ce.collection_date DESC
+
+            GROUP BY
+                ce.collection_date
+
+            ORDER BY
+                ce.collection_date DESC
         """, tuple(params))
+
         daywise = cursor.fetchall()
+
+        # -------------------------------------------------
+        # FARMER-WISE SUMMARY
+        # -------------------------------------------------
 
         cursor.execute(f"""
             SELECT
                 f.cid,
                 f.name,
                 COUNT(*),
-                COALESCE(SUM(ce.quantity), 0),
-                COALESCE(AVG(ce.fat), 0),
-                COALESCE(AVG(ce.snf), 0),
-                COALESCE(AVG(ce.rate), 0),
-                COALESCE(SUM(ce.amount), 0)
+                COALESCE(
+                    SUM(ce.quantity),
+                    0
+                ),
+                COALESCE(
+                    AVG(ce.fat),
+                    0
+                ),
+                COALESCE(
+                    AVG(ce.snf),
+                    0
+                ),
+                COALESCE(
+                    AVG(ce.rate),
+                    0
+                ),
+                COALESCE(
+                    SUM(ce.amount),
+                    0
+                )
+
             FROM collection_entries ce
-            JOIN farmers f ON f.id = ce.farmer_id
+
+            JOIN farmers f
+                ON f.id = ce.farmer_id
+
             WHERE {where_sql}
-            GROUP BY f.id, f.cid, f.name
-            ORDER BY COALESCE(SUM(ce.amount), 0) DESC, f.cid
+
+            GROUP BY
+                f.id,
+                f.cid,
+                f.name
+
+            ORDER BY
+                CAST(
+                    NULLIF(
+                        regexp_replace(
+                            f.cid,
+                            '[^0-9]',
+                            '',
+                            'g'
+                        ),
+                        ''
+                    ) AS BIGINT
+                ) NULLS LAST,
+                f.cid
         """, tuple(params))
+
         farmerwise = cursor.fetchall()
+
+        # -------------------------------------------------
+        # COLLECTION DETAILS
+        # -------------------------------------------------
 
         cursor.execute(f"""
             SELECT
-                ce.collection_date, f.cid, f.name, ce.session,
-                ce.fat, ce.snf, ce.quantity, ce.rate, ce.amount
+                ce.collection_date,
+                f.cid,
+                f.name,
+                ce.session,
+                ce.fat,
+                ce.snf,
+                ce.quantity,
+                ce.rate,
+                ce.amount
+
             FROM collection_entries ce
-            JOIN farmers f ON f.id = ce.farmer_id
+
+            JOIN farmers f
+                ON f.id = ce.farmer_id
+
             WHERE {where_sql}
-            ORDER BY ce.collection_date DESC, f.cid,
-                     CASE WHEN ce.session = 'PM' THEN 2 ELSE 1 END DESC,
-                     ce.id DESC
+
+            ORDER BY
+                CAST(
+                    NULLIF(
+                        regexp_replace(
+                            f.cid,
+                            '[^0-9]',
+                            '',
+                            'g'
+                        ),
+                        ''
+                    ) AS BIGINT
+                ) NULLS LAST,
+
+                f.cid,
+
+                ce.collection_date ASC,
+
+                CASE
+                    WHEN ce.session = 'AM'
+                    THEN 1
+                    ELSE 2
+                END ASC,
+
+                ce.id ASC
         """, tuple(params))
+
         details = cursor.fetchall()
 
         return render_template(
@@ -1459,7 +1756,9 @@ def reports():
             cid_to=cid_to,
             session=session
         )
+
     finally:
+
         cursor.close()
         release_db_connection(connection)
 
@@ -1640,13 +1939,22 @@ def borrowing():
                 f.cid,
                 f.name,
                 b.amount,
-                COALESCE(b.deducted_amount, 0),
-                COALESCE(b.remaining_amount, b.amount),
+                COALESCE(
+                    b.deducted_amount,
+                    0
+                ),
+                COALESCE(
+                    b.remaining_amount,
+                    b.amount
+                ),
                 b.description,
                 b.borrowing_date
+
             FROM borrowings b
+
             JOIN farmers f
                 ON f.id = b.farmer_id
+
             ORDER BY
                 b.borrowing_date DESC,
                 b.id DESC
@@ -1662,9 +1970,18 @@ def borrowing():
 
         cursor.execute("""
             SELECT
-                COALESCE(SUM(amount), 0),
-                COALESCE(SUM(deducted_amount), 0),
-                COALESCE(SUM(remaining_amount), 0)
+                COALESCE(
+                    SUM(amount),
+                    0
+                ),
+                COALESCE(
+                    SUM(deducted_amount),
+                    0
+                ),
+                COALESCE(
+                    SUM(remaining_amount),
+                    0
+                )
             FROM borrowings
         """)
 
@@ -1700,7 +2017,10 @@ def edit_borrowing(borrowing_id):
 
         cursor = connection.cursor()
 
-        farmer_id_redirect = request.form.get("farmer_id", "").strip()
+        farmer_id_redirect = request.form.get(
+            "farmer_id",
+            ""
+        ).strip()
 
         amount_value = request.form.get(
             "amount",
@@ -1725,7 +2045,12 @@ def edit_borrowing(borrowing_id):
             )
 
             return redirect(
-                url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+                url_for(
+                    "view_farmer",
+                    farmer_id=int(
+                        farmer_id_redirect
+                    )
+                )
                 if farmer_id_redirect.isdigit()
                 else url_for("borrowing")
             )
@@ -1744,7 +2069,12 @@ def edit_borrowing(borrowing_id):
             )
 
             return redirect(
-                url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+                url_for(
+                    "view_farmer",
+                    farmer_id=int(
+                        farmer_id_redirect
+                    )
+                )
                 if farmer_id_redirect.isdigit()
                 else url_for("borrowing")
             )
@@ -1757,7 +2087,12 @@ def edit_borrowing(borrowing_id):
             )
 
             return redirect(
-                url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+                url_for(
+                    "view_farmer",
+                    farmer_id=int(
+                        farmer_id_redirect
+                    )
+                )
                 if farmer_id_redirect.isdigit()
                 else url_for("borrowing")
             )
@@ -1765,7 +2100,10 @@ def edit_borrowing(borrowing_id):
         cursor.execute("""
             SELECT
                 amount,
-                COALESCE(deducted_amount, 0)
+                COALESCE(
+                    deducted_amount,
+                    0
+                )
             FROM borrowings
             WHERE id = %s
         """, (borrowing_id,))
@@ -1780,7 +2118,12 @@ def edit_borrowing(borrowing_id):
             )
 
             return redirect(
-                url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+                url_for(
+                    "view_farmer",
+                    farmer_id=int(
+                        farmer_id_redirect
+                    )
+                )
                 if farmer_id_redirect.isdigit()
                 else url_for("borrowing")
             )
@@ -1797,7 +2140,12 @@ def edit_borrowing(borrowing_id):
             )
 
             return redirect(
-                url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+                url_for(
+                    "view_farmer",
+                    farmer_id=int(
+                        farmer_id_redirect
+                    )
+                )
                 if farmer_id_redirect.isdigit()
                 else url_for("borrowing")
             )
@@ -1830,7 +2178,12 @@ def edit_borrowing(borrowing_id):
         )
 
         return redirect(
-            url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+            url_for(
+                "view_farmer",
+                farmer_id=int(
+                    farmer_id_redirect
+                )
+            )
             if farmer_id_redirect.isdigit()
             else url_for("borrowing")
         )
@@ -1860,7 +2213,10 @@ def delete_borrowing(borrowing_id):
         cursor.execute("""
             SELECT
                 amount,
-                COALESCE(deducted_amount, 0)
+                COALESCE(
+                    deducted_amount,
+                    0
+                )
             FROM borrowings
             WHERE id = %s
         """, (borrowing_id,))
@@ -1911,6 +2267,132 @@ def delete_borrowing(borrowing_id):
 
         return redirect(
             url_for("borrowing")
+        )
+
+    finally:
+
+        cursor.close()
+        release_db_connection(connection)
+
+
+# =========================================================
+# PRINT RECEIPT
+# =========================================================
+
+@app.route("/reports/receipt")
+def reports_receipt():
+
+    cid = request.args.get(
+        "cid",
+        ""
+    ).strip()
+
+    date_from = request.args.get(
+        "date_from",
+        ""
+    ).strip()
+
+    date_to = request.args.get(
+        "date_to",
+        ""
+    ).strip()
+
+    if not cid:
+
+        flash(
+            "Please select a CID to print the receipt.",
+            "error"
+        )
+
+        return redirect(
+            url_for("reports")
+        )
+
+    # Use valid defaults if dates are missing.
+
+    if not date_from:
+
+        date_from = (
+            date.today()
+            .replace(day=1)
+            .isoformat()
+        )
+
+    if not date_to:
+
+        date_to = (
+            date.today()
+            .isoformat()
+        )
+
+    connection = get_db_connection()
+
+    try:
+
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            SELECT
+                f.cid,
+                f.name,
+                ce.collection_date,
+                ce.session,
+                ce.fat,
+                ce.snf,
+                ce.quantity,
+                ce.rate,
+                ce.amount
+
+            FROM collection_entries ce
+
+            JOIN farmers f
+                ON f.id = ce.farmer_id
+
+            WHERE f.cid = %s
+
+              AND ce.collection_date
+                  BETWEEN %s AND %s
+
+            ORDER BY
+                ce.collection_date ASC,
+
+                CASE
+                    WHEN ce.session = 'AM'
+                    THEN 1
+                    ELSE 2
+                END ASC,
+
+                ce.id ASC
+        """, (
+            cid,
+            date_from,
+            date_to
+        ))
+
+        entries = cursor.fetchall()
+
+        if not entries:
+
+            flash(
+                "No collection records found for this CID.",
+                "error"
+            )
+
+            return redirect(
+                url_for(
+                    "reports",
+                    from_date=date_from,
+                    to_date=date_to,
+                    cid=cid
+                )
+            )
+
+        return render_template(
+            "reports_receipt.html",
+            entries=entries,
+            cid=cid,
+            date_from=date_from,
+            date_to=date_to
         )
 
     finally:
@@ -1986,7 +2468,9 @@ def billing(farmer_id):
         )
 
         cycle_start, cycle_end = (
-            get_billing_cycle(selected_date)
+            get_billing_cycle(
+                selected_date
+            )
         )
 
         # -------------------------------------------------
@@ -2000,8 +2484,11 @@ def billing(farmer_id):
                 COALESCE(SUM(amount), 0),
                 COALESCE(AVG(fat), 0),
                 COALESCE(AVG(snf), 0)
+
             FROM collection_entries
+
             WHERE farmer_id = %s
+
               AND collection_date
                   BETWEEN %s AND %s
         """, (
@@ -2041,7 +2528,9 @@ def billing(farmer_id):
                 borrowing_deduction,
                 net_amount,
                 created_at
+
             FROM billing_cycles
+
             WHERE farmer_id = %s
               AND cycle_start = %s
               AND cycle_end = %s
@@ -2058,8 +2547,7 @@ def billing(farmer_id):
         borrowings = []
 
         # -------------------------------------------------
-        # IF ALREADY FINALIZED
-        # SHOW ACTUAL DEDUCTIONS
+        # ALREADY FINALIZED
         # -------------------------------------------------
 
         if finalized_bill:
@@ -2077,14 +2565,20 @@ def billing(farmer_id):
                     b.description,
                     b.borrowing_date,
                     bbd.deducted_amount
+
                 FROM billing_borrowing_deductions bbd
+
                 JOIN borrowings b
                     ON b.id = bbd.borrowing_id
+
                 WHERE bbd.billing_cycle_id = %s
+
                 ORDER BY
                     b.borrowing_date ASC,
                     b.id ASC
-            """, (billing_cycle_id,))
+            """, (
+                billing_cycle_id
+            ))
 
             rows = cursor.fetchall()
 
@@ -2109,7 +2603,7 @@ def billing(farmer_id):
             )
 
         # -------------------------------------------------
-        # OTHERWISE CALCULATE PROPOSED DEDUCTIONS
+        # PROPOSED DEDUCTIONS
         # -------------------------------------------------
 
         else:
@@ -2118,20 +2612,32 @@ def billing(farmer_id):
                 SELECT
                     id,
                     amount,
-                    COALESCE(deducted_amount, 0),
-                    COALESCE(remaining_amount, amount),
+                    COALESCE(
+                        deducted_amount,
+                        0
+                    ),
+                    COALESCE(
+                        remaining_amount,
+                        amount
+                    ),
                     description,
                     borrowing_date
+
                 FROM borrowings
+
                 WHERE farmer_id = %s
+
                   AND COALESCE(
                         remaining_amount,
                         amount
                       ) > 0
+
                 ORDER BY
                     borrowing_date ASC,
                     id ASC
-            """, (farmer_id,))
+            """, (
+                farmer_id
+            ))
 
             rows = cursor.fetchall()
 
@@ -2179,12 +2685,15 @@ def billing(farmer_id):
                 })
 
             borrowing_deduction = (
-                gross_amount - remaining_bill
+                gross_amount
+                -
+                remaining_bill
             )
 
             net_amount = (
                 gross_amount
-                - borrowing_deduction
+                -
+                borrowing_deduction
             )
 
         return render_template(
@@ -2243,7 +2752,9 @@ def finalize_billing(farmer_id):
         )
 
         cycle_start, cycle_end = (
-            get_billing_cycle(selected_date)
+            get_billing_cycle(
+                selected_date
+            )
         )
 
         # -------------------------------------------------
@@ -2254,7 +2765,9 @@ def finalize_billing(farmer_id):
             SELECT id
             FROM farmers
             WHERE id = %s
-        """, (farmer_id,))
+        """, (
+            farmer_id
+        ))
 
         farmer = cursor.fetchone()
 
@@ -2275,10 +2788,13 @@ def finalize_billing(farmer_id):
 
         cursor.execute("""
             SELECT id
+
             FROM billing_cycles
+
             WHERE farmer_id = %s
               AND cycle_start = %s
               AND cycle_end = %s
+
             FOR UPDATE
         """, (
             farmer_id,
@@ -2311,9 +2827,15 @@ def finalize_billing(farmer_id):
 
         cursor.execute("""
             SELECT
-                COALESCE(SUM(amount), 0)
+                COALESCE(
+                    SUM(amount),
+                    0
+                )
+
             FROM collection_entries
+
             WHERE farmer_id = %s
+
               AND collection_date
                   BETWEEN %s AND %s
         """, (
@@ -2340,6 +2862,7 @@ def finalize_billing(farmer_id):
                 borrowing_deduction,
                 net_amount
             )
+
             VALUES
             (
                 %s,
@@ -2349,6 +2872,7 @@ def finalize_billing(farmer_id):
                 %s,
                 %s
             )
+
             RETURNING id
         """, (
             farmer_id,
@@ -2375,17 +2899,24 @@ def finalize_billing(farmer_id):
                     remaining_amount,
                     amount
                 )
+
             FROM borrowings
+
             WHERE farmer_id = %s
+
               AND COALESCE(
                     remaining_amount,
                     amount
                   ) > 0
+
             ORDER BY
                 borrowing_date ASC,
                 id ASC
+
             FOR UPDATE
-        """, (farmer_id,))
+        """, (
+            farmer_id
+        ))
 
         borrowing_rows = (
             cursor.fetchall()
@@ -2410,10 +2941,8 @@ def finalize_billing(farmer_id):
             if remaining_bill <= 0:
                 break
 
-            remaining_amount = (
-                decimal_value(
-                    remaining_value
-                )
+            remaining_amount = decimal_value(
+                remaining_value
             )
 
             deduction = min(
@@ -2438,6 +2967,7 @@ def finalize_billing(farmer_id):
 
             cursor.execute("""
                 UPDATE borrowings
+
                 SET
                     deducted_amount =
                         COALESCE(
@@ -2470,6 +3000,7 @@ def finalize_billing(farmer_id):
                     borrowing_id,
                     deducted_amount
                 )
+
                 VALUES
                 (
                     %s,
@@ -2488,7 +3019,8 @@ def finalize_billing(farmer_id):
 
         net_amount = (
             gross_amount
-            - total_deduction
+            -
+            total_deduction
         )
 
         # -------------------------------------------------
@@ -2497,9 +3029,11 @@ def finalize_billing(farmer_id):
 
         cursor.execute("""
             UPDATE billing_cycles
+
             SET
                 borrowing_deduction = %s,
                 net_amount = %s
+
             WHERE id = %s
         """, (
             total_deduction,
@@ -2508,7 +3042,7 @@ def finalize_billing(farmer_id):
         ))
 
         # -------------------------------------------------
-        # COMMIT EVERYTHING TOGETHER
+        # COMMIT EVERYTHING
         # -------------------------------------------------
 
         connection.commit()
@@ -2655,6 +3189,7 @@ def settings():
                     fat_rate,
                     snf_rate
                 )
+
                 VALUES
                 (
                     %s,
@@ -2687,8 +3222,11 @@ def settings():
                 pricing_mode,
                 fat_rate,
                 snf_rate
+
             FROM rate_settings
+
             ORDER BY id DESC
+
             LIMIT 1
         """)
 
