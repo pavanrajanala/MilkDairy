@@ -9,227 +9,8 @@
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/style.css') }}">
 
-    <style>
-        .farmer-view-page {
-            padding: 28px;
-            max-width: 1500px;
-            margin: 0 auto;
-        }
-
-        .farmer-view-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            gap: 20px;
-        }
-
-        .farmer-view-header h1 {
-            margin: 0;
-            font-size: 30px;
-        }
-
-        .farmer-view-header p {
-            margin: 6px 0 0;
-            color: #6b7280;
-        }
-
-        .back-btn {
-            text-decoration: none;
-            padding: 10px 16px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            color: #374151;
-            background: white;
-            font-weight: 600;
-        }
-
-        /* PROFILE */
-
-        .farmer-profile {
-            display: grid;
-            grid-template-columns: 1.2fr 1fr 1fr 1.5fr;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .profile-box {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            padding: 20px;
-        }
-
-        .profile-box span {
-            display: block;
-            color: #6b7280;
-            font-size: 13px;
-            margin-bottom: 7px;
-        }
-
-        .profile-box strong {
-            font-size: 18px;
-        }
-
-        /* STATISTICS */
-
-        .farmer-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            padding: 20px;
-        }
-
-        .stat-card span {
-            display: block;
-            color: #6b7280;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .stat-card strong {
-            font-size: 25px;
-        }
-
-        .stat-card small {
-            display: block;
-            margin-top: 5px;
-            color: #6b7280;
-        }
-
-        /* SECTIONS */
-
-        .farmer-section {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            padding: 22px;
-            margin-bottom: 24px;
-        }
-
-        .section-title {
-            margin-bottom: 18px;
-        }
-
-        .section-title h2 {
-            margin: 0;
-            font-size: 21px;
-        }
-
-        .section-title p {
-            margin: 5px 0 0;
-            color: #6b7280;
-            font-size: 14px;
-        }
-
-        /* TABLE */
-
-        .farmer-table-wrapper {
-            overflow-x: auto;
-        }
-
-        .farmer-table {
-            width: 100%;
-            min-width: 750px;
-            border-collapse: collapse;
-        }
-
-        .farmer-table th {
-            text-align: left;
-            padding: 13px;
-            background: #f8fafc;
-            color: #475569;
-            font-size: 13px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .farmer-table td {
-            padding: 14px 13px;
-            border-bottom: 1px solid #eef0f3;
-            font-size: 14px;
-        }
-
-        .farmer-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        /* BORROWING */
-
-        .account-summary {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-        }
-
-        .account-box {
-            padding: 18px;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-        }
-
-        .account-box span {
-            display: block;
-            color: #6b7280;
-            font-size: 13px;
-            margin-bottom: 6px;
-        }
-
-        .account-box strong {
-            font-size: 22px;
-        }
-
-        /* MOBILE */
-
-        @media (max-width: 1000px) {
-
-            .farmer-profile {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .farmer-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-        }
-
-        @media (max-width: 650px) {
-
-            .farmer-view-page {
-                padding: 18px;
-            }
-
-            .farmer-view-header {
-                display: block;
-            }
-
-            .farmer-view-header h1 {
-                font-size: 25px;
-            }
-
-            .back-btn {
-                display: inline-block;
-                margin-top: 15px;
-            }
-
-            .farmer-profile,
-            .farmer-stats,
-            .account-summary {
-                grid-template-columns: 1fr;
-            }
-
-            .farmer-section {
-                padding: 17px;
-            }
-
-        }
-    </style>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/farmer_view.css', v='20260911') }}">
 </head>
 
 <body>
@@ -240,43 +21,54 @@
 
     <aside class="sidebar">
 
-        <div class="sidebar-logo">
-            <h2>ABC Dairy</h2>
-            <span>Milk Collection</span>
+        <div class="brand">
+            <div class="brand-icon">🥛</div>
+            <div>
+                <h2>ABC Dairy</h2>
+                <span>Milk Management</span>
+            </div>
         </div>
 
-        <nav class="sidebar-nav">
+        <nav>
 
-            <a href="{{ url_for('dashboard') }}">
-                <span>Dashboard</span>
+            <a href="{{ url_for('dashboard') }}" class="nav-item">
+                <span>⌂</span>
+                Dashboard
             </a>
 
-            <a href="{{ url_for('collection') }}">
-                <span>Collection</span>
+            <a href="{{ url_for('collection') }}" class="nav-item">
+                <span>🥛</span>
+                Milk Collection
             </a>
 
-            <a href="{{ url_for('farmers') }}" class="active">
-                <span>Farmers</span>
+            <a href="{{ url_for('farmers') }}" class="nav-item active">
+                <span>👨‍🌾</span>
+                Farmers
             </a>
 
-            <a href="#">
-                <span>Reports</span>
+            <a href="{{ url_for('reports') }}" class="nav-item">
+                <span>📊</span>
+                Reports
             </a>
 
-            <a href="{{ url_for('borrowing') }}">
-                <span>Borrowing</span>
+            <a href="{{ url_for('borrowing') }}" class="nav-item">
+                <span>💰</span>
+                Borrowing
             </a>
 
-            <a href="{{ url_for('settings') }}">
-                <span>Rate Settings</span>
+            <a href="{{ url_for('settings') }}" class="nav-item">
+                <span>⚙️</span>
+                Rate Settings
             </a>
 
         </nav>
 
+        <div class="sidebar-bottom">
+            <div class="status-dot"><span></span>System Online</div>
+        </div>
+
     </aside>
 
-
-    <!-- MAIN -->
 
     <main class="main">
 
@@ -536,6 +328,7 @@
                                 <th>Deducted</th>
                                 <th>Remaining</th>
                                 <th>Description</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
 
@@ -567,6 +360,20 @@
                                     {{ borrowing[4] or "-" }}
                                 </td>
 
+                                <td>
+                                    <button
+                                        type="button"
+                                        class="borrowing-edit-btn"
+                                        data-id="{{ borrowing[0] }}"
+                                        data-amount="{{ '%.2f'|format(borrowing[1] or 0) }}"
+                                        data-date="{{ borrowing[5] }}"
+                                        data-description="{{ borrowing[4] or '' }}"
+                                        onclick="openBorrowingEdit(this)"
+                                    >
+                                        Edit Amount
+                                    </button>
+                                </td>
+
                             </tr>
 
                         {% endfor %}
@@ -591,5 +398,61 @@
 
 </div>
 
+
+<div id="borrowingEditModal" class="borrowing-edit-modal" aria-hidden="true">
+    <div class="borrowing-edit-dialog">
+        <div class="borrowing-edit-dialog-head">
+            <div>
+                <h2>Edit Borrowed Amount</h2>
+                <p>Update this borrowing record for {{ farmer[2] }} (CID {{ farmer[1] }}).</p>
+            </div>
+            <button type="button" class="borrowing-edit-close" onclick="closeBorrowingEdit()">×</button>
+        </div>
+        <form id="borrowingEditForm" method="POST">
+            <input type="hidden" name="farmer_id" value="{{ farmer[0] }}">
+            <div class="borrowing-edit-grid">
+                <div>
+                    <label for="editBorrowingAmount">Borrowed Amount</label>
+                    <input id="editBorrowingAmount" name="amount" type="number" min="0.01" step="0.01" required>
+                </div>
+                <div>
+                    <label for="editBorrowingDate">Date</label>
+                    <input id="editBorrowingDate" name="borrowing_date" type="date" required>
+                </div>
+                <div class="borrowing-edit-full">
+                    <label for="editBorrowingDescription">Description</label>
+                    <input id="editBorrowingDescription" name="description" type="text" maxlength="250">
+                </div>
+            </div>
+            <p class="borrowing-edit-help">If part of the borrowing has already been deducted, the new amount cannot be lower than the deducted amount.</p>
+            <div class="borrowing-edit-actions">
+                <button type="button" class="secondary-button" onclick="closeBorrowingEdit()">Cancel</button>
+                <button type="submit" class="primary-button">Save Amount</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openBorrowingEdit(button) {
+    const modal = document.getElementById('borrowingEditModal');
+    const form = document.getElementById('borrowingEditForm');
+    form.action = '/borrowing/edit/' + button.dataset.id;
+    document.getElementById('editBorrowingAmount').value = button.dataset.amount;
+    document.getElementById('editBorrowingDate').value = button.dataset.date;
+    document.getElementById('editBorrowingDescription').value = button.dataset.description || '';
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    document.getElementById('editBorrowingAmount').focus();
+}
+function closeBorrowingEdit() {
+    const modal = document.getElementById('borrowingEditModal');
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+}
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') closeBorrowingEdit();
+});
+</script>
 </body>
 </html>

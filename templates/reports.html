@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports | ABC Dairy</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
+</head>
+<body>
+<div class="app reports-page">
+
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">🥛</div>
+            <div>
+                <h2>ABC Dairy</h2>
+                <span>Milk Management</span>
+            </div>
+        </div>
+
+        <nav>
+            <a href="{{ url_for('dashboard') }}" class="nav-item">
+                <span>⌂</span>Dashboard
+            </a>
+            <a href="{{ url_for('collection') }}" class="nav-item">
+                <span>🥛</span>Milk Collection
+            </a>
+            <a href="{{ url_for('farmers') }}" class="nav-item">
+                <span>👨‍🌾</span>Farmers
+            </a>
+            <a href="{{ url_for('reports') }}" class="nav-item active">
+                <span>📊</span>Reports
+            </a>
+            <a href="{{ url_for('borrowing') }}" class="nav-item">
+                <span>💰</span>Borrowing
+            </a>
+<a href="{{ url_for('settings') }}" class="nav-item">
+                <span>⚙️</span>Rate Settings
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="status-dot"><span></span>System Online</div>
+        </div>
+    </aside>
+
+    <main class="main">
+        <div class="reports-page-content">
+            <header class="topbar">
+                <div>
+                    <h1>Reports</h1>
+                    <p>Analyze milk collection by date, farmer and session.</p>
+                </div>
+            </header>
+
+            <section class="collection-card report-filter-card">
+                <div class="card-heading">
+                    <div>
+                        <h2>Report Filters</h2>
+                        <p>Choose the date range, farmer CID, CID range, and session. The tables below show totals and detailed entries.</p>
+                    </div>
+                </div>
+
+                <form method="GET" action="{{ url_for('reports') }}" class="report-filter-form">
+                    <div class="input-field">
+                        <label for="from_date">From Date</label>
+                        <input type="date" id="from_date" name="from_date" value="{{ from_date }}" required>
+                    </div>
+
+                    <div class="input-field">
+                        <label for="to_date">To Date</label>
+                        <input type="date" id="to_date" name="to_date" value="{{ to_date }}" required>
+                    </div>
+
+                    <div class="input-field">
+                        <label for="cid">CID</label>
+                        <input type="text" id="cid" name="cid" value="{{ cid }}" placeholder="All farmers">
+                    </div>
+
+                    <div class="input-field">
+                        <label for="cid_from">CID From</label>
+                        <input type="number" id="cid_from" name="cid_from" value="{{ cid_from }}" placeholder="e.g. 1">
+                    </div>
+
+                    <div class="input-field">
+                        <label for="cid_to">CID To</label>
+                        <input type="number" id="cid_to" name="cid_to" value="{{ cid_to }}" placeholder="e.g. 100">
+                    </div>
+
+                    <div class="input-field">
+                        <label for="session">Session</label>
+                        <select id="session" name="session">
+                            <option value="" {% if not session %}selected{% endif %}>All Sessions</option>
+                            <option value="AM" {% if session == 'AM' %}selected{% endif %}>AM</option>
+                            <option value="PM" {% if session == 'PM' %}selected{% endif %}>PM</option>
+                        </select>
+                    </div>
+
+                    <div class="report-filter-actions">
+                        <button type="submit" class="primary-button">Generate Report</button>
+                        <a href="{{ url_for('reports') }}" class="secondary-button">Reset</a>
+                    </div>
+                </form>
+            </section>
+
+            <section class="report-stats">
+                <div class="report-stat-card"><span>Total Entries</span><strong>{{ summary.total_entries }}</strong></div>
+                <div class="report-stat-card"><span>Total Milk</span><strong>{{ "%.2f"|format(summary.total_quantity or 0) }} L</strong></div>
+                <div class="report-stat-card"><span>Total Amount</span><strong>₹{{ "%.2f"|format(summary.total_amount or 0) }}</strong></div>
+                <div class="report-stat-card"><span>Average Quantity</span><strong>{{ "%.2f"|format(summary.avg_quantity or 0) }} L</strong></div>
+                <div class="report-stat-card"><span>Average FAT</span><strong>{{ "%.2f"|format(summary.avg_fat or 0) }}</strong></div>
+                <div class="report-stat-card"><span>Average SNF</span><strong>{{ "%.2f"|format(summary.avg_snf or 0) }}</strong></div>
+                <div class="report-stat-card"><span>Average Rate</span><strong>₹{{ "%.2f"|format(summary.avg_rate or 0) }}</strong></div>
+            </section>
+
+            <section class="collection-card">
+                <div class="card-heading">
+                    <div>
+                        <h2>Day-wise Summary</h2>
+                        <p>Total milk, average quality, rate, and amount for each day in the selected filters.</p>
+                    </div>
+                </div>
+                <div class="table-wrapper report-table-wrapper">
+                    <table class="report-table">
+                        <thead><tr><th>Date</th><th>Entries</th><th>Milk</th><th>Avg FAT</th><th>Avg SNF</th><th>Avg Rate</th><th>Amount</th></tr></thead>
+                        <tbody>
+                        {% for row in daywise %}
+                            <tr>
+                                <td>{{ row[0] }}</td><td>{{ row[1] }}</td>
+                                <td>{{ "%.2f"|format(row[2] or 0) }} L</td>
+                                <td>{{ "%.2f"|format(row[3] or 0) }}</td>
+                                <td>{{ "%.2f"|format(row[4] or 0) }}</td>
+                                <td>₹{{ "%.2f"|format(row[5] or 0) }}</td>
+                                <td><strong>₹{{ "%.2f"|format(row[6] or 0) }}</strong></td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="7" class="report-empty">No records found for this filter.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="collection-card">
+                <div class="card-heading">
+                    <div>
+                        <h2>Farmer-wise Summary</h2>
+                        <p>One row per farmer showing entries, milk, quality averages, rate, and total amount.</p>
+                    </div>
+                </div>
+                <div class="table-wrapper report-table-wrapper">
+                    <table class="report-table">
+                        <thead><tr><th>CID</th><th>Farmer</th><th>Entries</th><th>Milk</th><th>Avg FAT</th><th>Avg SNF</th><th>Avg Rate</th><th>Amount</th></tr></thead>
+                        <tbody>
+                        {% for row in farmerwise %}
+                            <tr>
+                                <td class="report-cid">{{ row[0] }}</td><td>{{ row[1] }}</td><td>{{ row[2] }}</td>
+                                <td>{{ "%.2f"|format(row[3] or 0) }} L</td><td>{{ "%.2f"|format(row[4] or 0) }}</td>
+                                <td>{{ "%.2f"|format(row[5] or 0) }}</td><td>₹{{ "%.2f"|format(row[6] or 0) }}</td>
+                                <td><strong>₹{{ "%.2f"|format(row[7] or 0) }}</strong></td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="8" class="report-empty">No farmer records found.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="collection-card">
+                <div class="card-heading">
+                    <div>
+                        <h2>Collection Details</h2>
+                        <p>Every individual milk entry matching the selected filters.</p>
+                    </div>
+                    <span class="record-count">{{ details|length }} records</span>
+                </div>
+                <div class="table-wrapper report-table-wrapper">
+                    <table class="report-table detail-table">
+                        <thead><tr><th>Date</th><th>CID</th><th>Farmer</th><th>Session</th><th>FAT</th><th>SNF</th><th>Quantity</th><th>Rate</th><th>Amount</th></tr></thead>
+                        <tbody>
+                        {% for row in details %}
+                            <tr>
+                                <td>{{ row[0] }}</td><td class="report-cid">{{ row[1] }}</td><td>{{ row[2] }}</td><td><span class="session-pill">{{ row[3] }}</span></td>
+                                <td>{{ "%.2f"|format(row[4] or 0) }}</td><td>{% if row[5] is not none %}{{ "%.2f"|format(row[5]) }}{% else %}—{% endif %}</td>
+                                <td>{{ "%.2f"|format(row[6] or 0) }} L</td><td>₹{{ "%.2f"|format(row[7] or 0) }}</td><td><strong>₹{{ "%.2f"|format(row[8] or 0) }}</strong></td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="9" class="report-empty">No collection records found.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+</body>
+</html>

@@ -1,159 +1,56 @@
-/* =========================================================
-   FARMER VIEW PAGE
-   ========================================================= */
+/* ABC_DAIRY_PAGE_CSS_LOADED */
+/* ABC Dairy — Farmer View aligned to the common application model */
+.farmer-view-page{width:100%;box-sizing:border-box;}
+.farmer-view-page .farmer-view-header{min-height:66px;display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:22px;}
+.farmer-view-page .farmer-view-header h1{margin:0;color:var(--text);font-size:26px;line-height:1.2;font-weight:800;letter-spacing:-.45px;}
+.farmer-view-page .farmer-view-header p{margin:6px 0 0;color:var(--muted);font-size:13px;}
+.farmer-view-page .back-btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border:1px solid var(--border-strong);border-radius:9px;background:#fff;color:var(--text-2);font-size:12px;font-weight:750;text-decoration:none;}
+.farmer-view-page .back-btn:hover{background:#f8fafc;color:var(--text);}
+.farmer-profile{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px;}
+.farmer-view-page .profile-box{min-height:100px;padding:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:center;box-sizing:border-box;}
+.farmer-view-page .profile-box span,.farmer-view-page .stat-card span,.farmer-view-page .account-box span{display:block;color:var(--muted);font-size:11px;font-weight:650;margin-bottom:5px;}
+.farmer-view-page .profile-box strong{font-size:16px;color:var(--text);font-weight:800;overflow-wrap:anywhere;}
+.farmer-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px;}
+.farmer-view-page .stat-card{min-height:104px;padding:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:center;box-sizing:border-box;}
+.farmer-view-page .stat-card strong{font-size:21px;color:var(--text);font-weight:800;}
+.farmer-view-page .farmer-section{padding:24px;margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);box-sizing:border-box;}
+.farmer-view-page .section-title{margin-bottom:17px;}
+.farmer-view-page .section-title h2{margin:0;color:var(--text);font-size:17px;font-weight:800;}
+.farmer-view-page .section-title p{margin:4px 0 0;color:var(--muted);font-size:12px;}
+.account-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.farmer-view-page .account-box{min-height:95px;padding:16px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);display:flex;flex-direction:column;justify-content:center;box-sizing:border-box;}
+.farmer-view-page .account-box strong{font-size:20px;color:var(--text);font-weight:800;}
+.farmer-view-page .farmer-table-wrapper{width:100%;overflow-x:auto;border:1px solid var(--border);border-radius:10px;}
+.farmer-view-page .farmer-table{width:100%;border-collapse:collapse;min-width:750px;}
+.farmer-view-page .farmer-table th{padding:12px 14px;background:#f8fafc;border-bottom:1px solid var(--border);color:#667085;font-size:10px;font-weight:800;text-align:left;white-space:nowrap;}
+.farmer-view-page .farmer-table td{padding:13px 14px;border-bottom:1px solid #edf0f4;color:var(--text-2);font-size:12px;white-space:nowrap;vertical-align:middle;}
+.farmer-view-page .farmer-table tr:last-child td{border-bottom:0;}
+.farmer-view-page .farmer-table tbody tr:hover{background:#fafcff;}
+.farmer-view-page .btn-billing,.farmer-view-page .btn-view{min-height:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;padding:0 12px;border-radius:7px;font-size:12px;font-weight:700;text-decoration:none;}
+.farmer-view-page .btn-billing{border:1px solid #d1d5db;background:#fff;color:#374151;}
+.farmer-view-page .btn-billing:hover{background:#f8fafc;}
+.farmer-view-page .btn-view{min-width:58px;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;}
+.farmer-view-page .btn-view:hover{background:#dbeafe;border-color:#93c5fd;}
+@media(max-width:1000px){.farmer-profile{grid-template-columns:repeat(2,minmax(0,1fr));}.farmer-stats{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:680px){.farmer-view-page .farmer-view-header{align-items:flex-start;flex-direction:column;}.farmer-profile,.farmer-stats,.account-summary{grid-template-columns:1fr;}.farmer-view-page .farmer-section{padding:18px;}}
 
-.farmer-view-page {
-    width: 100%;
-    box-sizing: border-box;
-}
 
-/* ---------------------------------------------------------
-   COMMON BOX SIZING
-   --------------------------------------------------------- */
-
-.farmer-view-page .profile-box,
-.farmer-view-page .stat-card,
-.farmer-view-page .farmer-section {
-    box-sizing: border-box;
-}
-
-/* ---------------------------------------------------------
-   PROFILE
-   --------------------------------------------------------- */
-
-.farmer-view-page .profile-box {
-    min-height: 100px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-/* ---------------------------------------------------------
-   STAT CARDS
-   --------------------------------------------------------- */
-
-.farmer-view-page .stat-card {
-    min-height: 115px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-/* ---------------------------------------------------------
-   ACCOUNT / BORROWING SUMMARY
-   --------------------------------------------------------- */
-
-.farmer-view-page .account-box {
-    min-height: 95px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-/* ---------------------------------------------------------
-   TABLES
-   --------------------------------------------------------- */
-
-.farmer-view-page .farmer-table th {
-    white-space: nowrap;
-}
-
-.farmer-view-page .farmer-table td {
-    white-space: nowrap;
-}
-
-/* ---------------------------------------------------------
-   BACK BUTTON
-   --------------------------------------------------------- */
-
-.farmer-view-page .back-btn:hover {
-    background: #f8fafc;
-}
-
-/* ---------------------------------------------------------
-   VIEW BUTTON
-   --------------------------------------------------------- */
-
-.farmer-view-page .btn-view {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    min-width: 58px;
-    height: 34px;
-    padding: 0 12px;
-
-    border: 1px solid #bfdbfe;
-    border-radius: 7px;
-
-    background: #eff6ff;
-    color: #1d4ed8;
-
-    text-decoration: none;
-
-    font-size: 13px;
-    font-weight: 600;
-
-    cursor: pointer;
-}
-
-.farmer-view-page .btn-view:hover {
-    background: #dbeafe;
-    border-color: #93c5fd;
-}
-
-/* ---------------------------------------------------------
-   BILLING BUTTON
-   --------------------------------------------------------- */
-
-.farmer-view-page .btn-billing {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    min-width: 70px;
-    height: 34px;
-    padding: 0 12px;
-
-    border: 1px solid #d1d5db;
-    border-radius: 7px;
-
-    background: #ffffff;
-    color: #374151;
-
-    text-decoration: none;
-
-    font-size: 13px;
-    font-weight: 600;
-
-    cursor: pointer;
-}
-
-.farmer-view-page .btn-billing:hover {
-    background: #f8fafc;
-}
-
-/* ---------------------------------------------------------
-   RESPONSIVE
-   --------------------------------------------------------- */
-
-@media (max-width: 900px) {
-
-    .farmer-view-page {
-        width: 100%;
-    }
-}
-
-@media (max-width: 680px) {
-
-    .farmer-view-page .profile-box,
-    .farmer-view-page .stat-card,
-    .farmer-view-page .account-box {
-        min-height: auto;
-    }
-
-    .farmer-view-page .farmer-table-wrapper {
-        width: 100%;
-        overflow-x: auto;
-    }
-}
+/* Borrowing edit controls inside Farmer View */
+.farmer-view-page .borrowing-edit-btn{min-height:34px;padding:0 11px;border:1px solid #c7dbff;border-radius:7px;background:#eef5ff;color:#155eef;font-size:11px;font-weight:750;cursor:pointer;white-space:nowrap;}
+.farmer-view-page .borrowing-edit-btn:hover{background:#dfeeff;border-color:#a9c7ff;}
+.borrowing-edit-modal{position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.38);}
+.borrowing-edit-modal.show{display:flex;}
+.borrowing-edit-dialog{width:min(560px,100%);padding:24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:0 18px 50px rgba(15,23,42,.18);}
+.borrowing-edit-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;}
+.borrowing-edit-dialog-head h2{margin:0;font-size:20px;color:var(--text);}
+.borrowing-edit-dialog-head p{margin:5px 0 0;color:var(--muted);font-size:12px;}
+.borrowing-edit-close{width:34px;height:34px;border:1px solid var(--border-strong);border-radius:8px;background:#fff;color:var(--text-2);font-size:22px;line-height:1;cursor:pointer;}
+.borrowing-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.borrowing-edit-grid>div{display:flex;flex-direction:column;gap:7px;}
+.borrowing-edit-grid label{font-size:12px;font-weight:750;color:var(--text-2);}
+.borrowing-edit-grid input{width:100%;min-height:46px;height:46px;padding:0 12px;border:1px solid var(--border-strong);border-radius:9px;background:#fff;color:var(--text);font-size:14px;box-sizing:border-box;outline:none;}
+.borrowing-edit-grid input:focus{border-color:#7aa2f8;box-shadow:0 0 0 3px rgba(37,99,235,.09);}
+.borrowing-edit-full{grid-column:1/-1;}
+.borrowing-edit-help{margin:14px 0 0;color:var(--muted);font-size:11px;line-height:1.5;}
+.borrowing-edit-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px;}
+@media(max-width:680px){.borrowing-edit-dialog{padding:18px;}.borrowing-edit-grid{grid-template-columns:1fr;}.borrowing-edit-full{grid-column:auto;}.borrowing-edit-actions{flex-direction:column-reverse;}.borrowing-edit-actions button{width:100%;}}

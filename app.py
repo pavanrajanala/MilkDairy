@@ -29,6 +29,8 @@ app.secret_key = os.environ.get(
     "abc-dairy-local-key"
 )
 
+_last_cleanup_date = None
+
 
 # =========================================================
 # HELPERS
@@ -92,6 +94,40 @@ def parse_date(value):
     except (ValueError, TypeError):
 
         return date.today()
+
+
+def cleanup_old_collection_data():
+    """Automatically remove collection records older than 6 months."""
+    connection = None
+    cursor = None
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("""
+            DELETE FROM collection_entries
+            WHERE collection_date < (CURRENT_DATE - INTERVAL '6 months')
+        """)
+        connection.commit()
+    except Exception:
+        if connection:
+            connection.rollback()
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            release_db_connection(connection)
+
+
+@app.before_request
+def auto_cleanup_old_collection_data():
+    # Run at most once per application process per calendar day so the
+    # cleanup does not slow down normal page navigation.
+    global _last_cleanup_date
+    today = date.today()
+    if _last_cleanup_date == today:
+        return
+    cleanup_old_collection_data()
+    _last_cleanup_date = today
 
 
 # =========================================================
@@ -1286,7 +1322,146 @@ def view_farmer(farmer_id):
 @app.route("/reports")
 def reports():
 
-    return "Reports page - coming next"
+    connection = get_db_connection()
+
+    try:
+        cursor = connection.cursor()
+
+        today = date.today()
+        default_from = today.replace(day=1)
+
+        from_date = parse_date(request.args.get("from_date") or default_from.isoformat())
+        to_date = parse_date(request.args.get("to_date") or today.isoformat())
+        cid = request.args.get("cid", "").strip()
+        cid_from = request.args.get("cid_from", "").strip()
+        cid_to = request.args.get("cid_to", "").strip()
+        session = request.args.get("session", "").strip().upper()
+
+        if from_date > to_date:
+            from_date, to_date = to_date, from_date
+
+        conditions = [
+            "ce.collection_date BETWEEN %s AND %s"
+        ]
+        params = [from_date, to_date]
+
+        if cid:
+            conditions.append("f.cid = %s")
+            params.append(cid)
+        else:
+            try:
+                cid_from_value = int(cid_from) if cid_from else None
+                cid_to_value = int(cid_to) if cid_to else None
+            except ValueError:
+                cid_from_value = None
+                cid_to_value = None
+                cid_from = ""
+                cid_to = ""
+                flash("CID range must contain numbers only.", "error")
+
+            if cid_from_value is not None:
+                conditions.append("CAST(NULLIF(regexp_replace(f.cid, '[^0-9]', '', 'g'), '') AS BIGINT) >= %s")
+                params.append(cid_from_value)
+            if cid_to_value is not None:
+                conditions.append("CAST(NULLIF(regexp_replace(f.cid, '[^0-9]', '', 'g'), '') AS BIGINT) <= %s")
+                params.append(cid_to_value)
+
+        if session in ("AM", "PM"):
+            conditions.append("ce.session = %s")
+            params.append(session)
+        else:
+            session = ""
+
+        where_sql = " AND ".join(conditions)
+
+        cursor.execute(f"""
+            SELECT
+                COUNT(*) AS total_entries,
+                COALESCE(SUM(ce.quantity), 0) AS total_quantity,
+                COALESCE(SUM(ce.amount), 0) AS total_amount,
+                COALESCE(AVG(ce.quantity), 0) AS avg_quantity,
+                COALESCE(AVG(ce.fat), 0) AS avg_fat,
+                COALESCE(AVG(ce.snf), 0) AS avg_snf,
+                COALESCE(AVG(ce.rate), 0) AS avg_rate
+            FROM collection_entries ce
+            JOIN farmers f ON f.id = ce.farmer_id
+            WHERE {where_sql}
+        """, tuple(params))
+        summary_row = cursor.fetchone()
+
+        class Summary:
+            total_entries = summary_row[0]
+            total_quantity = summary_row[1]
+            total_amount = summary_row[2]
+            avg_quantity = summary_row[3]
+            avg_fat = summary_row[4]
+            avg_snf = summary_row[5]
+            avg_rate = summary_row[6]
+
+        cursor.execute(f"""
+            SELECT
+                ce.collection_date,
+                COUNT(*),
+                COALESCE(SUM(ce.quantity), 0),
+                COALESCE(AVG(ce.fat), 0),
+                COALESCE(AVG(ce.snf), 0),
+                COALESCE(AVG(ce.rate), 0),
+                COALESCE(SUM(ce.amount), 0)
+            FROM collection_entries ce
+            JOIN farmers f ON f.id = ce.farmer_id
+            WHERE {where_sql}
+            GROUP BY ce.collection_date
+            ORDER BY ce.collection_date DESC
+        """, tuple(params))
+        daywise = cursor.fetchall()
+
+        cursor.execute(f"""
+            SELECT
+                f.cid,
+                f.name,
+                COUNT(*),
+                COALESCE(SUM(ce.quantity), 0),
+                COALESCE(AVG(ce.fat), 0),
+                COALESCE(AVG(ce.snf), 0),
+                COALESCE(AVG(ce.rate), 0),
+                COALESCE(SUM(ce.amount), 0)
+            FROM collection_entries ce
+            JOIN farmers f ON f.id = ce.farmer_id
+            WHERE {where_sql}
+            GROUP BY f.id, f.cid, f.name
+            ORDER BY COALESCE(SUM(ce.amount), 0) DESC, f.cid
+        """, tuple(params))
+        farmerwise = cursor.fetchall()
+
+        cursor.execute(f"""
+            SELECT
+                ce.collection_date, f.cid, f.name, ce.session,
+                ce.fat, ce.snf, ce.quantity, ce.rate, ce.amount
+            FROM collection_entries ce
+            JOIN farmers f ON f.id = ce.farmer_id
+            WHERE {where_sql}
+            ORDER BY ce.collection_date DESC, f.cid,
+                     CASE WHEN ce.session = 'PM' THEN 2 ELSE 1 END DESC,
+                     ce.id DESC
+        """, tuple(params))
+        details = cursor.fetchall()
+
+        return render_template(
+            "reports.html",
+            summary=Summary,
+            daywise=daywise,
+            farmerwise=farmerwise,
+            details=details,
+            from_date=from_date.isoformat(),
+            to_date=to_date.isoformat(),
+            cid=cid,
+            cid_from=cid_from,
+            cid_to=cid_to,
+            session=session
+        )
+    finally:
+        cursor.close()
+        release_db_connection(connection)
 
 
 # =========================================================
@@ -1525,6 +1700,8 @@ def edit_borrowing(borrowing_id):
 
         cursor = connection.cursor()
 
+        farmer_id_redirect = request.form.get("farmer_id", "").strip()
+
         amount_value = request.form.get(
             "amount",
             ""
@@ -1548,7 +1725,9 @@ def edit_borrowing(borrowing_id):
             )
 
             return redirect(
-                url_for("borrowing")
+                url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+                if farmer_id_redirect.isdigit()
+                else url_for("borrowing")
             )
 
         try:
@@ -1565,7 +1744,9 @@ def edit_borrowing(borrowing_id):
             )
 
             return redirect(
-                url_for("borrowing")
+                url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+                if farmer_id_redirect.isdigit()
+                else url_for("borrowing")
             )
 
         if amount <= 0:
@@ -1576,7 +1757,9 @@ def edit_borrowing(borrowing_id):
             )
 
             return redirect(
-                url_for("borrowing")
+                url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+                if farmer_id_redirect.isdigit()
+                else url_for("borrowing")
             )
 
         cursor.execute("""
@@ -1597,7 +1780,9 @@ def edit_borrowing(borrowing_id):
             )
 
             return redirect(
-                url_for("borrowing")
+                url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+                if farmer_id_redirect.isdigit()
+                else url_for("borrowing")
             )
 
         deducted_amount = decimal_value(
@@ -1612,7 +1797,9 @@ def edit_borrowing(borrowing_id):
             )
 
             return redirect(
-                url_for("borrowing")
+                url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+                if farmer_id_redirect.isdigit()
+                else url_for("borrowing")
             )
 
         remaining_amount = (
@@ -1643,7 +1830,9 @@ def edit_borrowing(borrowing_id):
         )
 
         return redirect(
-            url_for("borrowing")
+            url_for("view_farmer", farmer_id=int(farmer_id_redirect))
+            if farmer_id_redirect.isdigit()
+            else url_for("borrowing")
         )
 
     finally:

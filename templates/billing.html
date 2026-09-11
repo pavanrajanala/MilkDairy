@@ -1026,11 +1026,12 @@
         }
 
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/billing.css') }}">
 </head>
 
 <body>
 
-<div class="app">
+<div class="app billing-page-app">
 
     <!-- =================================================
          SIDEBAR
@@ -1038,47 +1039,41 @@
 
     <aside class="sidebar">
 
-        <div class="sidebar-logo">
-
-            <h2>ABC Dairy</h2>
-
-            <span>
-                Milk Collection
-            </span>
-
+        <div class="brand">
+            <div class="brand-icon">🥛</div>
+            <div>
+                <h2>ABC Dairy</h2>
+                <span>Milk Management</span>
+            </div>
         </div>
 
-
-        <nav class="sidebar-nav">
-
-            <a href="{{ url_for('dashboard') }}">
-                <span>Dashboard</span>
+        <nav>
+            <a href="{{ url_for('dashboard') }}" class="nav-item">
+                <span>⌂</span>Dashboard
             </a>
-
-            <a href="{{ url_for('collection') }}">
-                <span>Collection</span>
+            <a href="{{ url_for('collection') }}" class="nav-item">
+                <span>🥛</span>Milk Collection
             </a>
-
-            <a
-                href="{{ url_for('farmers') }}"
-                class="active"
-            >
-                <span>Farmers</span>
+            <a href="{{ url_for('farmers') }}" class="nav-item">
+                <span>👨‍🌾</span>Farmers
             </a>
-
-            <a href="{{ url_for('reports') }}">
-                <span>Reports</span>
+            <a href="{{ url_for('reports') }}" class="nav-item">
+                <span>📊</span>Reports
             </a>
-
-            <a href="{{ url_for('borrowing') }}">
-                <span>Borrowing</span>
+            <a href="{{ url_for('borrowing') }}" class="nav-item">
+                <span>💰</span>Borrowing
             </a>
-
-            <a href="{{ url_for('settings') }}">
-                <span>Rate Settings</span>
+            <a href="{{ url_for('billing_home') }}" class="nav-item active">
+                <span>₹</span>Billing
             </a>
-
+            <a href="{{ url_for('settings') }}" class="nav-item">
+                <span>⚙️</span>Rate Settings
+            </a>
         </nav>
+
+        <div class="sidebar-bottom">
+            <div class="status-dot"><span></span>System Online</div>
+        </div>
 
     </aside>
 
