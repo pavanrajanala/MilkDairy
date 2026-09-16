@@ -1,6 +1,11 @@
+/* =========================================================
+   BASIC RESET
+   ========================================================= */
+
 * {
     box-sizing: border-box;
 }
+
 
 html,
 body {
@@ -9,10 +14,16 @@ body {
     background: #ffffff;
 }
 
+
 body {
     font-family: "Courier New", monospace;
     color: #000;
 }
+
+
+/* =========================================================
+   MAIN RECEIPT
+   ========================================================= */
 
 .receipt {
     width: 72mm;
@@ -21,25 +32,33 @@ body {
     font-size: 11px;
 }
 
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
 .receipt-header {
     text-align: center;
 }
 
-.dairy-name {
+
+.receipt-header h2 {
+    margin: 0;
     font-size: 18px;
     font-weight: bold;
 }
 
-.receipt-title {
+
+.receipt-header h3 {
+    margin: 2px 0 6px 0;
     font-size: 12px;
     font-weight: bold;
-    margin-top: 2px;
 }
 
-.separator {
-    border-top: 1px dashed #000;
-    margin: 7px 0;
-}
+
+/* =========================================================
+   FARMER INFORMATION
+   ========================================================= */
 
 .farmer-info div {
     display: flex;
@@ -48,65 +67,206 @@ body {
     margin: 3px 0;
 }
 
-.farmer-info span {
-    font-weight: normal;
-}
 
 .farmer-info strong {
-    text-align: right;
+    font-weight: bold;
 }
 
-.collection-table {
+
+/* =========================================================
+   RECEIPT TABLE
+   ========================================================= */
+
+.receipt-table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
 }
 
-.collection-table th,
-.collection-table td {
+
+.receipt-table th,
+.receipt-table td {
     padding: 2px 0;
     text-align: center;
     font-size: 9px;
     white-space: nowrap;
 }
 
-.collection-table th {
+
+.receipt-table th {
     font-weight: bold;
 }
 
-.summary div {
+
+/* =========================================================
+   SUMMARY
+   ========================================================= */
+
+.receipt-summary {
+    margin-top: 6px;
+}
+
+
+.summary-row {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin: 4px 0;
 }
 
-.summary strong {
+
+.summary-row strong {
     font-weight: bold;
 }
 
-.thank-you {
+
+.borrowing-row {
+    font-weight: bold;
+}
+
+
+.net-row {
+    border-top: 1px dashed #000;
+    padding-top: 5px;
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+
+/* =========================================================
+   BORROWING
+   ========================================================= */
+
+.borrowing-section {
+    margin-top: 8px;
+}
+
+
+.borrowing-title {
     text-align: center;
     font-weight: bold;
-    margin-top: 10px;
+    border-top: 1px dashed #000;
+    border-bottom: 1px dashed #000;
+    padding: 4px 0;
 }
+
+
+.borrowing-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+    margin: 4px 0;
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   SEPARATOR
+   ========================================================= */
+
+.receipt-separator {
+    border-top: 1px dashed #000;
+    margin: 7px 0;
+}
+
+
+/* =========================================================
+   NO DATA
+   ========================================================= */
+
+.no-data {
+    text-align: center;
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+
+/* =========================================================
+   PAGE SIZE
+   ========================================================= */
 
 @page {
     size: 80mm auto;
     margin: 0;
 }
 
+
+/* =========================================================
+   PRINT
+   ========================================================= */
+
 @media print {
+
+    @page {
+        size: 80mm auto;
+        margin: 0;
+    }
+
 
     html,
     body {
         width: 80mm;
         margin: 0;
         padding: 0;
+        background: white;
     }
 
-    .receipt {
-        width: 72mm;
-        margin: 0 auto;
-        padding: 3mm 2mm;
+
+    /*
+     * Remove browser default printing margins
+     */
+
+    body {
+        margin: 0;
+        padding: 0;
     }
+
+
+    /*
+     * EACH FARMER RECEIPT = ONE PAGE
+     */
+
+    .farmer-receipt {
+        width: 80mm;
+
+        margin: 0;
+        padding: 3mm;
+
+        box-sizing: border-box;
+
+        page-break-after: always;
+        break-after: page;
+    }
+
+
+    /*
+     * LAST FARMER SHOULD NOT CREATE
+     * AN EXTRA BLANK PAGE
+     */
+
+    .farmer-receipt:last-child {
+        page-break-after: auto;
+        break-after: auto;
+    }
+
+
+    /*
+     * Hide separators during printing
+     */
+
+    .receipt-separator {
+        display: none;
+    }
+
+
+    /*
+     * Prevent table rows from splitting
+     */
+
+    .receipt-table tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
 }

@@ -15,6 +15,10 @@
 
     <style>
 
+        /* =====================================================
+           PRINT SETTINGS
+           ===================================================== */
+
         @media print {
 
             @page {
@@ -24,190 +28,685 @@
 
             html,
             body {
-                width: 80mm !important;
-                height: auto !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                background: white !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+                width: 80mm;
+                margin: 0;
+                padding: 0;
+                background: white;
             }
 
-            /* Hide everything in the document by default. */
+            /*
+             * Hide everything except receipt
+             */
             body * {
-                visibility: hidden !important;
+                visibility: hidden;
             }
 
-            /* Re-reveal only the receipt and its descendants.
-               visibility (not display) is used deliberately so that
-               table/thead/tbody/tr/td keep their tabular layout roles —
-               display:none + display:block here would collapse the
-               table into block boxes and break column alignment. */
             .receipt,
             .receipt * {
-                visibility: visible !important;
+                visibility: visible;
             }
 
             .receipt {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-
-                width: 80mm !important;
-
-                margin: 0 !important;
-                padding: 4mm !important;
-
-                box-sizing: border-box !important;
-
-                background: white !important;
-
-                box-shadow: none !important;
-                border: none !important;
+                width: 80mm;
+                margin: 0;
+                padding: 0;
             }
 
-            /* Belt-and-braces: some browsers still paint scrollbars /
-               body backgrounds outside the absolutely-positioned
-               .receipt if body retains natural document height. */
-            body {
-                overflow: hidden !important;
+            /*
+             * IMPORTANT:
+             * EACH FARMER RECEIPT = ONE PAGE
+             */
+            .farmer-receipt {
+                width: 80mm;
+                margin: 0;
+                padding: 3mm;
+
+                box-sizing: border-box;
+
+                page-break-after: always;
+                break-after: page;
             }
 
+            /*
+             * Do not create an extra blank page
+             * after the last farmer.
+             */
+            .farmer-receipt:last-child {
+                page-break-after: auto;
+                break-after: auto;
+            }
+
+            /*
+             * Do not show the separator while printing.
+             */
+            .receipt-separator {
+                display: none;
+            }
         }
 
     </style>
 
 </head>
 
+
 <body>
+
 
 <div class="receipt">
 
-    <div class="receipt-header">
 
-        <div class="dairy-name">
-            ABC DAIRY
+    <!-- =====================================================
+         EXACT CID RECEIPT
+         ===================================================== -->
+
+    {% if entries %}
+
+        <!-- ONE FARMER RECEIPT -->
+
+        <div class="farmer-receipt">
+
+
+            <!-- HEADER -->
+
+            <div class="receipt-header">
+
+                <h2>ABC DAIRY</h2>
+
+                <h3>MILK COLLECTION</h3>
+
+            </div>
+
+
+            <!-- FARMER INFORMATION -->
+
+            <div class="farmer-info">
+
+                <div>
+                    <strong>CID:</strong>
+                    {{ entries[0][0] }}
+                </div>
+
+                <div>
+                    <strong>Name:</strong>
+                    {{ entries[0][1] }}
+                </div>
+
+                <div>
+                    <strong>Period:</strong>
+
+                    {{ date_from.strftime('%d/%m/%y') }}
+
+                    -
+
+                    {{ date_to.strftime('%d/%m/%y') }}
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 COLLECTION TABLE
+                 ================================================= -->
+
+            <table class="receipt-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>DATE</th>
+                        <th>SES</th>
+                        <th>FAT</th>
+                        <th>SNF</th>
+                        <th>QTY</th>
+                        <th>AMT</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for entry in entries %}
+
+                        <tr>
+
+                            <td>
+                                {{ entry[2].strftime('%d/%m/%y') }}
+                            </td>
+
+                            <td>
+                                {{ entry[3] }}
+                            </td>
+
+                            <td>
+                                {{ entry[4] }}
+                            </td>
+
+                            <td>
+
+                                {% if entry[5] is not none %}
+                                    {{ entry[5] }}
+                                {% else %}
+                                    -
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ "%.2f"|format(entry[6]|float) }}
+                            </td>
+
+                            <td>
+                                ₹{{ "%.2f"|format(entry[8]|float) }}
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+
+            <!-- =================================================
+                 TOTALS
+                 ================================================= -->
+
+            <div class="receipt-summary">
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Milk Amount
+                    </span>
+
+                    <strong>
+
+                        ₹{{ "%.2f"|format(
+                            gross_amount|float
+                        ) }}
+
+                    </strong>
+
+                </div>
+
+
+                {% if borrowing_deduction
+                      and borrowing_deduction > 0 %}
+
+                    <div class="summary-row borrowing-row">
+
+                        <span>
+                            Borrowing
+                        </span>
+
+                        <strong>
+
+                            -₹{{ "%.2f"|format(
+                                borrowing_deduction|float
+                            ) }}
+
+                        </strong>
+
+                    </div>
+
+                {% endif %}
+
+
+                <div class="summary-row net-row">
+
+                    <span>
+                        NET
+                    </span>
+
+                    <strong>
+
+                        ₹{{ "%.2f"|format(
+                            net_amount|float
+                        ) }}
+
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =================================================
+                 BORROWING DETAILS
+                 ================================================= -->
+
+            {% if borrowings %}
+
+                <div class="borrowing-section">
+
+                    <div class="borrowing-title">
+
+                        BORROWING DEDUCTION
+
+                    </div>
+
+
+                    {% for borrowing in borrowings %}
+
+                        {% if borrowing.deduction > 0 %}
+
+                            <div class="borrowing-item">
+
+                                <div>
+
+                                    {% if borrowing.description %}
+
+                                        {{ borrowing.description }}
+
+                                    {% else %}
+
+                                        Borrowing
+
+                                    {% endif %}
+
+                                </div>
+
+
+                                <div>
+
+                                    ₹{{ "%.2f"|format(
+                                        borrowing.deduction|float
+                                    ) }}
+
+                                </div>
+
+                            </div>
+
+                        {% endif %}
+
+                    {% endfor %}
+
+                </div>
+
+            {% endif %}
+
+
         </div>
 
-        <div class="receipt-title">
-            MILK COLLECTION
-        </div>
+        <!-- END EXACT CID RECEIPT -->
 
-    </div>
 
-    <div class="separator"></div>
+    <!-- =====================================================
+         CID RANGE RECEIPTS
+         ===================================================== -->
 
-    <div class="farmer-info">
+    {% elif receipt_groups %}
 
-        <div>
-            <span>CID</span>
-            <strong>{{ cid }}</strong>
-        </div>
 
-        <div>
-            <span>NAME</span>
-            <strong>{{ entries[0][1] }}</strong>
-        </div>
+        {% for group in receipt_groups %}
 
-        <div>
-            <span>PERIOD</span>
-            <strong>{{ date_from }} - {{ date_to }}</strong>
-        </div>
 
-    </div>
+            <!-- =================================================
+                 IMPORTANT:
+                 ONE FARMER = ONE farmer-receipt DIV
+                 ================================================= -->
 
-    <div class="separator"></div>
+            <div class="farmer-receipt">
 
-    <table class="collection-table">
 
-        <thead>
-            <tr>
-                <th>DATE</th>
-                <th>SES</th>
-                <th>FAT</th>
-                <th>SNF</th>
-                <th>QTY</th>
-                <th>AMT</th>
-            </tr>
-        </thead>
+                <!-- =================================================
+                     FARMER HEADER
+                     ================================================= -->
 
-        <tbody>
+                <div class="receipt-header">
 
-        {% for row in entries %}
+                    <h2>
+                        ABC DAIRY
+                    </h2>
 
-            <tr>
+                    <h3>
+                        MILK COLLECTION
+                    </h3>
 
-                <td>
-                    {{ row[2].strftime('%d-%m') }}
-                </td>
+                </div>
 
-                <td>
-                    {{ row[3] }}
-                </td>
 
-                <td>
-                    {{ "%.2f"|format(row[4]) }}
-                </td>
+                <!-- =================================================
+                     FARMER INFORMATION
+                     ================================================= -->
 
-                <td>
-                    {% if row[5] is none %}
-                        NE
-                    {% else %}
-                        {{ "%.2f"|format(row[5]) }}
+                <div class="farmer-info">
+
+
+                    <div>
+
+                        <strong>
+                            CID:
+                        </strong>
+
+                        {{ group.cid }}
+
+                    </div>
+
+
+                    <div>
+
+                        <strong>
+                            Name:
+                        </strong>
+
+                        {{ group.name }}
+
+                    </div>
+
+
+                    <div>
+
+                        <strong>
+                            Period:
+                        </strong>
+
+                        {{ date_from.strftime('%d/%m/%y') }}
+
+                        -
+
+                        {{ date_to.strftime('%d/%m/%y') }}
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- =================================================
+                     COLLECTION TABLE
+                     ================================================= -->
+
+                <table class="receipt-table">
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>DATE</th>
+                            <th>SES</th>
+                            <th>FAT</th>
+                            <th>SNF</th>
+                            <th>QTY</th>
+                            <th>AMT</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                        {% for entry in group.entries %}
+
+
+                            <tr>
+
+
+                                <td>
+
+                                    {{ entry[2].strftime(
+                                        '%d/%m/%y'
+                                    ) }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ entry[3] }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ entry[4] }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {% if entry[5] is not none %}
+
+                                        {{ entry[5] }}
+
+                                    {% else %}
+
+                                        -
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ "%.2f"|format(
+                                        entry[6]|float
+                                    ) }}
+
+                                </td>
+
+
+                                <td>
+
+                                    ₹{{ "%.2f"|format(
+                                        entry[8]|float
+                                    ) }}
+
+                                </td>
+
+
+                            </tr>
+
+
+                        {% endfor %}
+
+
+                    </tbody>
+
+
+                </table>
+
+
+                <!-- =================================================
+                     FARMER TOTALS
+                     ================================================= -->
+
+                <div class="receipt-summary">
+
+
+                    <div class="summary-row">
+
+
+                        <span>
+                            Milk Amount
+                        </span>
+
+
+                        <strong>
+
+                            ₹{{ "%.2f"|format(
+                                group.gross_amount|float
+                            ) }}
+
+                        </strong>
+
+
+                    </div>
+
+
+                    {% if group.borrowing_deduction
+                          and group.borrowing_deduction > 0 %}
+
+
+                        <div class="summary-row borrowing-row">
+
+
+                            <span>
+                                Borrowing
+                            </span>
+
+
+                            <strong>
+
+                                -₹{{ "%.2f"|format(
+                                    group.borrowing_deduction|float
+                                ) }}
+
+                            </strong>
+
+
+                        </div>
+
+
                     {% endif %}
-                </td>
 
-                <td>
-                    {{ "%.2f"|format(row[6]) }}
-                </td>
 
-                <td>
-                    {{ "%.2f"|format(row[8]) }}
-                </td>
+                    <div class="summary-row net-row">
 
-            </tr>
+
+                        <span>
+                            NET
+                        </span>
+
+
+                        <strong>
+
+                            ₹{{ "%.2f"|format(
+                                group.net_amount|float
+                            ) }}
+
+                        </strong>
+
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- =================================================
+                     BORROWING DETAILS
+                     ================================================= -->
+
+                {% if group.borrowings %}
+
+
+                    <div class="borrowing-section">
+
+
+                        <div class="borrowing-title">
+
+                            BORROWING DEDUCTION
+
+                        </div>
+
+
+                        {% for borrowing in group.borrowings %}
+
+
+                            {% if borrowing.deduction > 0 %}
+
+
+                                <div class="borrowing-item">
+
+
+                                    <div>
+
+
+                                        {% if borrowing.description %}
+
+                                            {{ borrowing.description }}
+
+                                        {% else %}
+
+                                            Borrowing
+
+                                        {% endif %}
+
+
+                                    </div>
+
+
+                                    <div>
+
+                                        ₹{{ "%.2f"|format(
+                                            borrowing.deduction|float
+                                        ) }}
+
+                                    </div>
+
+
+                                </div>
+
+
+                            {% endif %}
+
+
+                        {% endfor %}
+
+
+                    </div>
+
+
+                {% endif %}
+
+
+            </div>
+
+            <!-- =================================================
+                 END ONE FARMER RECEIPT
+
+                 The next farmer automatically starts on
+                 the next printed page because of CSS.
+                 ================================================= -->
+
 
         {% endfor %}
 
-        </tbody>
 
-    </table>
+    <!-- =====================================================
+         NO DATA
+         ===================================================== -->
 
-    <div class="separator"></div>
+    {% else %}
 
-    <div class="summary">
 
-        <div>
-            <span>TOTAL QTY</span>
-            <strong>
-                {{ "%.2f"|format(entries | sum(attribute=6)) }} L
-            </strong>
+        <div class="no-data">
+
+            No collection records found.
+
         </div>
 
-        <div>
-            <span>MILK AMOUNT</span>
-            <strong>
-                ₹{{ "%.2f"|format(entries | sum(attribute=8)) }}
-            </strong>
-        </div>
 
-    </div>
+    {% endif %}
 
-    <div class="separator"></div>
-
-    <div class="thank-you">
-        THANK YOU
-    </div>
 
 </div>
+
 
 <script>
 
 window.onload = function () {
+
     window.print();
+
 };
 
 </script>
+
 
 </body>
 

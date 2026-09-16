@@ -834,20 +834,120 @@ document
     .getElementById("printAllReceiptsBtn")
     .addEventListener("click", function () {
 
-        /*
-         * PRINT THE CURRENT REPORT PAGE
-         *
-         * No new page.
-         * No new tab.
-         * No reports_receipt route.
-         */
+        const cid = document
+            .getElementById("cid")
+            .value
+            .trim();
 
-        window.print();
+        const cidFrom = document
+            .getElementById("cid_from")
+            .value
+            .trim();
+
+        const cidTo = document
+            .getElementById("cid_to")
+            .value
+            .trim();
+
+        const dateFrom = document
+            .getElementById("from_date")
+            .value;
+
+        const dateTo = document
+            .getElementById("to_date")
+            .value;
+
+        let receiptUrl =
+            "{{ url_for('reports_receipt') }}";
+
+        const params = new URLSearchParams();
+
+        // -------------------------------------------------
+        // EXACT CID
+        // -------------------------------------------------
+
+        if (cid) {
+
+            params.set(
+                "cid",
+                cid
+            );
+
+        }
+
+        // -------------------------------------------------
+        // CID RANGE
+        // -------------------------------------------------
+
+        else if (cidFrom || cidTo) {
+
+            if (cidFrom) {
+
+                params.set(
+                    "cid_from",
+                    cidFrom
+                );
+
+            }
+
+            if (cidTo) {
+
+                params.set(
+                    "cid_to",
+                    cidTo
+                );
+
+            }
+
+        }
+
+        // -------------------------------------------------
+        // NO CID
+        // -------------------------------------------------
+
+        else {
+
+            alert(
+                "Please select a CID or CID range before printing."
+            );
+
+            return;
+        }
+
+        // -------------------------------------------------
+        // DATES
+        // -------------------------------------------------
+
+        if (dateFrom) {
+
+            params.set(
+                "date_from",
+                dateFrom
+            );
+
+        }
+
+        if (dateTo) {
+
+            params.set(
+                "date_to",
+                dateTo
+            );
+
+        }
+
+        // -------------------------------------------------
+        // OPEN RECEIPT PAGE
+        // -------------------------------------------------
+
+        window.location.href =
+            receiptUrl +
+            "?" +
+            params.toString();
 
     });
 
 </script>
-
 </body>
 
 </html>

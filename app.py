@@ -2279,50 +2279,69 @@ def delete_borrowing(borrowing_id):
 # PRINT RECEIPT
 # =========================================================
 
+# =========================================================
+# PRINT RECEIPT
+# =========================================================
+
+# =========================================================
+# PRINT RECEIPT
+# =========================================================
+
+# =========================================================
+# PRINT RECEIPT
+# =========================================================
+# =========================================================
+# PRINT RECEIPT
+# =========================================================
+
 @app.route("/reports/receipt")
 def reports_receipt():
 
-    cid = request.args.get(
-        "cid",
-        ""
-    ).strip()
+    cid = request.args.get("cid", "").strip()
+    cid_from = request.args.get("cid_from", "").strip()
+    cid_to = request.args.get("cid_to", "").strip()
 
-    date_from = request.args.get(
+    date_from_raw = request.args.get(
         "date_from",
         ""
     ).strip()
 
-    date_to = request.args.get(
+    date_to_raw = request.args.get(
         "date_to",
         ""
     ).strip()
 
-    if not cid:
+    # =========================================================
+    # DATE PARSING
+    # =========================================================
+
+    if date_from_raw:
+        date_from = parse_date(date_from_raw)
+    else:
+        date_from = date.today().replace(day=1)
+
+    if date_to_raw:
+        date_to = parse_date(date_to_raw)
+    else:
+        date_to = date.today()
+
+    # Swap dates if user selected them backwards
+    if date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    # =========================================================
+    # CID VALIDATION
+    # =========================================================
+
+    if not cid and not cid_from and not cid_to:
 
         flash(
-            "Please select a CID to print the receipt.",
+            "Please select a CID or CID range.",
             "error"
         )
 
         return redirect(
             url_for("reports")
-        )
-
-    # Use valid defaults if dates are missing.
-
-    if not date_from:
-
-        date_from = (
-            date.today()
-            .replace(day=1)
-            .isoformat()
-        )
-
-    if not date_to:
-
-        date_to = (
-            date.today()
-            .isoformat()
         )
 
     connection = get_db_connection()
@@ -2331,8 +2350,292 @@ def reports_receipt():
 
         cursor = connection.cursor()
 
+        # =====================================================
+        # EXACT CID
+        # =====================================================
+
+        if cid:
+
+            cursor.execute("""
+                SELECT
+                    f.id,
+                    f.cid,
+                    f.name,
+                    ce.collection_date,
+                    ce.session,
+                    ce.fat,
+                    ce.snf,
+                    ce.quantity,
+                    ce.rate,
+                    ce.amount
+
+                FROM collection_entries ce
+
+                JOIN farmers f
+                    ON f.id = ce.farmer_id
+
+                WHERE f.cid = %s
+
+                  AND ce.collection_date
+                      BETWEEN %s AND %s
+
+                ORDER BY
+                    ce.collection_date ASC,
+
+                    CASE
+                        WHEN ce.session = 'AM'
+                        THEN 1
+                        ELSE 2
+                    END ASC,
+
+                    ce.id ASC
+
+            """, (
+                cid,
+                date_from,
+                date_to
+            ))
+
+            rows = cursor.fetchall()
+
+            if not rows:
+
+                flash(
+                    f"No collection records found for CID {cid}.",
+                    "error"
+                )
+
+                return redirect(
+                    url_for(
+                        "reports",
+                        from_date=date_from.isoformat(),
+                        to_date=date_to.isoformat(),
+                        cid=cid
+                    )
+                )
+
+            # -------------------------------------------------
+            # RECEIPT ENTRIES
+            # -------------------------------------------------
+
+            entries = []
+
+            for row in rows:
+
+                entries.append((
+                    row[1],       # CID
+                    row[2],       # Name
+                    row[3],       # Date
+                    row[4],       # Session
+                    row[5],       # FAT
+                    row[6],       # SNF
+                    row[7],       # Quantity
+                    row[8],       # Rate
+                    row[9]        # Amount
+                ))
+
+            farmer_id = rows[0][0]
+
+            # -------------------------------------------------
+            # GROSS MILK AMOUNT
+            # -------------------------------------------------
+
+            gross_amount = sum(
+                decimal_value(row[9])
+                for row in rows
+            )
+
+            # -------------------------------------------------
+            # OUTSTANDING BORROWINGS
+            # -------------------------------------------------
+
+            cursor.execute("""
+                SELECT
+                    id,
+                    amount,
+                    COALESCE(deducted_amount, 0),
+                    COALESCE(remaining_amount, amount),
+                    description,
+                    borrowing_date
+
+                FROM borrowings
+
+                WHERE farmer_id = %s
+
+                  AND COALESCE(
+                        remaining_amount,
+                        amount
+                      ) > 0
+
+                ORDER BY
+                    borrowing_date ASC,
+                    id ASC
+
+            """, (
+                farmer_id,
+            ))
+
+            borrowing_rows = cursor.fetchall()
+
+            borrowings = []
+
+            remaining_bill = gross_amount
+            borrowing_deduction = Decimal("0")
+
+            # -------------------------------------------------
+            # CALCULATE BORROWING DEDUCTION
+            # -------------------------------------------------
+
+            for row in borrowing_rows:
+
+                amount = decimal_value(row[1])
+
+                deducted_amount = decimal_value(
+                    row[2]
+                )
+
+                remaining_amount = decimal_value(
+                    row[3]
+                )
+
+                if remaining_bill > 0:
+
+                    deduction = min(
+                        remaining_amount,
+                        remaining_bill
+                    )
+
+                    remaining_bill -= deduction
+
+                    borrowing_deduction += (
+                        deduction
+                    )
+
+                else:
+
+                    deduction = Decimal("0")
+
+                borrowings.append({
+                    "id": row[0],
+                    "amount": amount,
+                    "deducted_amount": deducted_amount,
+                    "remaining_amount": remaining_amount,
+                    "description": row[4],
+                    "borrowing_date": row[5],
+                    "deduction": deduction
+                })
+
+            # -------------------------------------------------
+            # NET AMOUNT
+            # -------------------------------------------------
+
+            net_amount = (
+                gross_amount
+                - borrowing_deduction
+            )
+
+            # -------------------------------------------------
+            # EXACT CID RECEIPT
+            # -------------------------------------------------
+
+            return render_template(
+                "reports_receipt.html",
+
+                entries=entries,
+
+                receipt_groups=None,
+
+                cid=cid,
+
+                cid_from="",
+
+                cid_to="",
+
+                date_from=date_from,
+
+                date_to=date_to,
+
+                gross_amount=gross_amount,
+
+                borrowings=borrowings,
+
+                borrowing_deduction=(
+                    borrowing_deduction
+                ),
+
+                net_amount=net_amount
+            )
+
+        # =====================================================
+        # CID RANGE
+        # =====================================================
+
+        # If only cid_from is given
+        if cid_from and not cid_to:
+            cid_to = cid_from
+
+        # If only cid_to is given
+        if cid_to and not cid_from:
+            cid_from = cid_to
+
+        # -----------------------------------------------------
+        # EXTRACT NUMBERS FROM CID
+        #
+        # Examples:
+        #
+        # C1     -> 1
+        # C101   -> 101
+        # 101    -> 101
+        # C005   -> 5
+        # C1000  -> 1000
+        #
+        # -----------------------------------------------------
+
+        try:
+
+            cid_from_number = int(
+                ''.join(
+                    ch for ch in cid_from
+                    if ch.isdigit()
+                )
+            )
+
+            cid_to_number = int(
+                ''.join(
+                    ch for ch in cid_to
+                    if ch.isdigit()
+                )
+            )
+
+        except (ValueError, TypeError):
+
+            flash(
+                "Invalid CID range.",
+                "error"
+            )
+
+            return redirect(
+                url_for("reports")
+            )
+
+        # -----------------------------------------------------
+        # SWAP RANGE IF NEEDED
+        # -----------------------------------------------------
+
+        if cid_from_number > cid_to_number:
+
+            cid_from_number, cid_to_number = (
+                cid_to_number,
+                cid_from_number
+            )
+
+        # =====================================================
+        # GET COLLECTION DATA
+        # =====================================================
+
         cursor.execute("""
             SELECT
+                f.id,
                 f.cid,
                 f.name,
                 ce.collection_date,
@@ -2348,12 +2651,40 @@ def reports_receipt():
             JOIN farmers f
                 ON f.id = ce.farmer_id
 
-            WHERE f.cid = %s
+            WHERE
 
-              AND ce.collection_date
-                  BETWEEN %s AND %s
+                CAST(
+                    NULLIF(
+                        regexp_replace(
+                            f.cid,
+                            '[^0-9]',
+                            '',
+                            'g'
+                        ),
+                        ''
+                    )
+                    AS BIGINT
+                )
+                BETWEEN %s AND %s
+
+                AND ce.collection_date
+                    BETWEEN %s AND %s
 
             ORDER BY
+
+                CAST(
+                    NULLIF(
+                        regexp_replace(
+                            f.cid,
+                            '[^0-9]',
+                            '',
+                            'g'
+                        ),
+                        ''
+                    )
+                    AS BIGINT
+                ) ASC,
+
                 ce.collection_date ASC,
 
                 CASE
@@ -2363,44 +2694,237 @@ def reports_receipt():
                 END ASC,
 
                 ce.id ASC
+
         """, (
-            cid,
+            cid_from_number,
+            cid_to_number,
             date_from,
             date_to
         ))
 
-        entries = cursor.fetchall()
+        rows = cursor.fetchall()
 
-        if not entries:
+        # =====================================================
+        # NO DATA
+        # =====================================================
+
+        if not rows:
 
             flash(
-                "No collection records found for this CID.",
+                f"No collection records found for "
+                f"CID range {cid_from} - {cid_to}.",
                 "error"
             )
 
             return redirect(
                 url_for(
                     "reports",
-                    from_date=date_from,
-                    to_date=date_to,
-                    cid=cid
+                    from_date=date_from.isoformat(),
+                    to_date=date_to.isoformat(),
+                    cid_from=cid_from,
+                    cid_to=cid_to
                 )
             )
 
+        # =====================================================
+        # GROUP DATA BY FARMER
+        # =====================================================
+
+        receipt_groups = {}
+
+        for row in rows:
+
+            farmer_id = row[0]
+
+            if farmer_id not in receipt_groups:
+
+                receipt_groups[farmer_id] = {
+                    "farmer_id": farmer_id,
+                    "cid": row[1],
+                    "name": row[2],
+                    "entries": []
+                }
+
+            receipt_groups[
+                farmer_id
+            ]["entries"].append((
+                row[1],       # CID
+                row[2],       # Name
+                row[3],       # Date
+                row[4],       # Session
+                row[5],       # FAT
+                row[6],       # SNF
+                row[7],       # Quantity
+                row[8],       # Rate
+                row[9]        # Amount
+            ))
+
+        # =====================================================
+        # CALCULATE EACH FARMER'S BILL
+        # =====================================================
+
+        for farmer_id, group in receipt_groups.items():
+
+            entries = group["entries"]
+
+            # -------------------------------------------------
+            # GROSS AMOUNT
+            # -------------------------------------------------
+
+            gross_amount = sum(
+                decimal_value(entry[8])
+                for entry in entries
+            )
+
+            # -------------------------------------------------
+            # GET BORROWINGS
+            # -------------------------------------------------
+
+            cursor.execute("""
+                SELECT
+                    id,
+                    amount,
+                    COALESCE(deducted_amount, 0),
+                    COALESCE(remaining_amount, amount),
+                    description,
+                    borrowing_date
+
+                FROM borrowings
+
+                WHERE farmer_id = %s
+
+                  AND COALESCE(
+                        remaining_amount,
+                        amount
+                      ) > 0
+
+                ORDER BY
+                    borrowing_date ASC,
+                    id ASC
+
+            """, (
+                farmer_id,
+            ))
+
+            borrowing_rows = cursor.fetchall()
+
+            borrowings = []
+
+            remaining_bill = gross_amount
+
+            borrowing_deduction = Decimal("0")
+
+            # -------------------------------------------------
+            # CALCULATE DEDUCTIONS
+            # -------------------------------------------------
+
+            for row in borrowing_rows:
+
+                amount = decimal_value(
+                    row[1]
+                )
+
+                deducted_amount = decimal_value(
+                    row[2]
+                )
+
+                remaining_amount = decimal_value(
+                    row[3]
+                )
+
+                if remaining_bill > 0:
+
+                    deduction = min(
+                        remaining_amount,
+                        remaining_bill
+                    )
+
+                    remaining_bill -= (
+                        deduction
+                    )
+
+                    borrowing_deduction += (
+                        deduction
+                    )
+
+                else:
+
+                    deduction = Decimal("0")
+
+                borrowings.append({
+                    "id": row[0],
+                    "amount": amount,
+                    "deducted_amount": deducted_amount,
+                    "remaining_amount": remaining_amount,
+                    "description": row[4],
+                    "borrowing_date": row[5],
+                    "deduction": deduction
+                })
+
+            # -------------------------------------------------
+            # NET AMOUNT
+            # -------------------------------------------------
+
+            net_amount = (
+                gross_amount
+                - borrowing_deduction
+            )
+
+            group["gross_amount"] = (
+                gross_amount
+            )
+
+            group["borrowings"] = (
+                borrowings
+            )
+
+            group["borrowing_deduction"] = (
+                borrowing_deduction
+            )
+
+            group["net_amount"] = (
+                net_amount
+            )
+
+        # =====================================================
+        # RANGE RECEIPTS
+        # =====================================================
+
         return render_template(
             "reports_receipt.html",
-            entries=entries,
-            cid=cid,
+
+            receipt_groups=list(
+                receipt_groups.values()
+            ),
+
+            entries=None,
+
+            cid="",
+
+            cid_from=cid_from,
+
+            cid_to=cid_to,
+
             date_from=date_from,
-            date_to=date_to
+
+            date_to=date_to,
+
+            gross_amount=None,
+
+            borrowings=None,
+
+            borrowing_deduction=None,
+
+            net_amount=None
         )
 
     finally:
 
         cursor.close()
-        release_db_connection(connection)
 
-
+        release_db_connection(
+            connection
+        )
 # =========================================================
 # BILLING HOME
 # =========================================================
